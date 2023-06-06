@@ -5,4 +5,6 @@ export interface IInterface {
   onData(callback: (data: ArrayBuffer) => void): void;
   onDisconnect(callback: () => void): void;
   onConnect(callback: () => void): void;
+  dispose(): void;
 }
+

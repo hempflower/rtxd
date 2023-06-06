@@ -5,3 +5,7 @@
 export function ListSerialPort() {
   return window['go']['main']['LabSerial']['ListSerialPort']();
 }
+
+export function OpenSerialPort(arg1, arg2, arg3, arg4, arg5) {
+  return window['go']['main']['LabSerial']['OpenSerialPort'](arg1, arg2, arg3, arg4, arg5);
+}

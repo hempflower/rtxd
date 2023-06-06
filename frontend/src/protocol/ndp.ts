@@ -29,3 +29,8 @@ export class NDProtocol implements IProtocol {
     throw new Error("Method not implemented.");
   }
 }
+
+
+export const createNDProtocol = () => {
+  return new NDProtocol();
+}

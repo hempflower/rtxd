@@ -1,5 +1,5 @@
 import { ref,onMounted,onBeforeUnmount } from 'vue';
-import { ListSerialPort } from "@/../wailsjs/go/main/LabSerial"
+import { getSerialPorts } from "@/serial";
 
 export type SerialOptions = {
     path: string;
@@ -13,12 +13,12 @@ export const useSerialList = () => {
     const serialPorts = ref<string[]>([]);
     let interval : number;
     const listSerialPorts = async () => {
-        serialPorts.value = await ListSerialPort();
+        serialPorts.value = await getSerialPorts();
     };
 
     onMounted(() => {
         listSerialPorts();
-        interval = setInterval(listSerialPorts, 1000);
+        interval = setInterval(listSerialPorts, 500);
     })
 
     onBeforeUnmount(() => {
