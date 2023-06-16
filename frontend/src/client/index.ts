@@ -3,12 +3,15 @@ import type { ChannelData, IChannel, IProtocol } from "@/protocol/protocol";
 import type { IInterface } from "@/interface/interface";
 import type { Emitter } from "mitt";
 import mitt from "mitt";
+import { th } from "element-plus/es/locale";
 
 class LabClient implements ILabClient {
   private _protocol: IProtocol | null = null;
   private _interface: IInterface | null = null;
   private _events: Emitter<LabClientEvents> = mitt<LabClientEvents>();
   private _isConnected = false;
+
+  private _ChannelListCache: IChannel[] = [];
 
   get events(): Emitter<LabClientEvents> {
     return this._events;
@@ -25,21 +28,25 @@ class LabClient implements ILabClient {
     if (!this._interface) {
       throw new Error("No interface provided");
     }
-
-    this._interface.connect();
     this._interface.onConnect(() => {
-      this._protocol?.afterConnect();
+      this._protocol?.afterConnect((data: ArrayBuffer) => this._interface?.send(data));
       this._isConnected = true;
+      // fetch channel list
+      this._protocol?.getChannels()
       this._events.emit("connect");
+      console.log('OnConnect CB')
     });
     this._interface.onDisconnect(() => {
       this._isConnected = false;
       this._protocol?.disconnect();
       this._events.emit("disconnect");
+      console.log('OnDisconnect CB')
     });
     this._interface.onData((data) => {
       this._protocol?.parse(data);
     });
+
+    this._interface.connect();
   }
   disconnect(): void {
     if (!this._isConnected) {
@@ -52,7 +59,18 @@ class LabClient implements ILabClient {
       throw new Error("Not connected");
     }
 
-    return (this._protocol as IProtocol).getChannels();
+    if(this._ChannelListCache.length > 0){
+      return new Promise((resolve) => {
+        resolve(this._ChannelListCache);
+      });
+    }
+
+    return new Promise((resolve) => {
+      this._protocol?.getChannels().then((channels) => {
+        this._ChannelListCache = channels;
+        resolve(channels);
+      });
+    });
   }
   writeChannel(id: number, value: ChannelData): void {
     if (!this._isConnected) {
