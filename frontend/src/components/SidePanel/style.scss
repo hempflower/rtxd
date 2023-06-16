@@ -1,0 +1,33 @@
+.lab-side {
+    &-container {
+        padding: 0 12px;
+    }
+
+    &-title {
+        font-size: 14px;
+        font-weight: bold;
+        margin-bottom: 12px;
+    }
+
+    &-form {
+        .form-label {
+            font-size: 12px;
+            margin-bottom: 4px;
+        }
+
+        &-item {
+            margin-bottom: 8px;
+
+            .input-width {
+                width: 100% !important;
+            }
+
+            .input-label {
+                font-size: 10px;
+                color: rgb(143, 143, 143);
+                font-weight: bold;
+                margin-bottom: 4px;
+            }
+        }
+    }
+}

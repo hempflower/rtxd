@@ -1,8 +1,8 @@
 <template>
-    <div class="lab-connect-container">
-        <div class="lab-connect-title">连接调试设备</div>
-        <div class="lab-connect-form">
-            <div class="lab-connect-form-item">
+    <div class="lab-side-container">
+        <div class="lab-side-title">连接调试设备</div>
+        <div class="lab-side-form">
+            <div class="lab-side-form-item">
                 <div class="input-label">
                     通信接口
                 </div>
@@ -10,7 +10,7 @@
                     <el-option v-for="item in interfaces" :key="item.value" :label="item.label" :value="item.value" />
                 </el-select>
             </div>
-            <div class="lab-connect-form-item">
+            <div class="lab-side-form-item">
                 <div class="input-label">
                     协议
                 </div>
@@ -20,15 +20,15 @@
             </div>
 
             <!-- Connect Button -->
-            <div class="lab-connect-form-item">
-                <el-button v-if="!connectionState.connected" class="input-width" type="primary" @click="connect">连接</el-button>
-                <el-button v-else class="input-width" type="danger" @click="connect">断开</el-button>
+            <div class="lab-side-form-item">
+                <el-button v-if="!connectionState.connected" class="input-width" type="primary" @click="connect">连  接</el-button>
+                <el-button v-else class="input-width" type="danger" @click="disconnect">断开连接</el-button>
             </div>
         </div>
         <el-divider></el-divider>
-        <div class="lab-connect-title">接口参数</div>
-        <div v-show="selectedInterface === 'serial'" class="lab-connect-form">
-            <div class="lab-connect-form-item">
+        <div class="lab-side-title">接口参数</div>
+        <div v-show="selectedInterface === 'serial'" class="lab-side-form">
+            <div class="lab-side-form-item">
                 <div class="input-label">
                     端口
                 </div>
@@ -36,14 +36,14 @@
                     <el-option v-for="item in serialPorts" :key="item" :label="item" :value="item" />
                 </el-select>
             </div>
-            <div class="lab-connect-form-item">
+            <div class="lab-side-form-item">
                 <div class="input-label">
                     波特率
                 </div>
                 <el-autocomplete class="input-width" v-model="serialOptions.baudRate"
                     :fetch-suggestions="fetchPresetsBaudRate" placeholder="波特率" :disabled="connectionState.connected"/>
             </div>
-            <div class="lab-connect-form-item">
+            <div class="lab-side-form-item">
                 <div class="input-label">
                     停止位
                 </div>
@@ -53,7 +53,7 @@
                     <el-option label="2" value="2" />
                 </el-select>
             </div>
-            <div class="lab-connect-form-item">
+            <div class="lab-side-form-item">
                 <div class="input-label">
                     数据位
                 </div>
@@ -64,7 +64,7 @@
                     <el-option label="5" value="5" />
                 </el-select>
             </div>
-            <div class="lab-connect-form-item">
+            <div class="lab-side-form-item">
                 <div class="input-label">
                     检验位
                 </div>
@@ -81,17 +81,18 @@
     </div>
 </template>
 <script lang="ts" setup>
-import { ref, watch } from 'vue'
+import { ref, unref, watch } from 'vue'
 import { useSerialList, useSerialOptionsModel } from '@/composables/serial';
-import { useLabClient } from '@/composables/lab';
-import { useConnectionState } from '@/composables/state/basic';
+import { useLabClient,useConnectionState } from '@/composables/lab';
+import { useNotify } from '@/composables/notify';
 
 import { createSerialInterface } from '@/interface/serial';
 import type { IInterface } from '@/interface/interface';
 import type { IProtocol } from '@/protocol/protocol';
 import { createNDProtocol } from '@/protocol/ndp';
+import { createMockInterface } from '@/interface/mock';
 
-type InterfaceType = 'serial' | 'tcp' | 'udp' | 'ws'
+type InterfaceType = 'serial' | 'tcp' | 'udp' | 'ws' | 'mock'
 type ProtocolType = 'ndp' | 'raw'
 
 const interfaces = [
@@ -99,6 +100,10 @@ const interfaces = [
         label: '串口',
         value: 'serial'
     },
+    {
+        label: 'Mock',
+        value: 'mock'
+    }
 ]
 
 const protocols = [
@@ -128,6 +133,7 @@ watch(serialPorts, (value) => {
     }
 })
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const fetchPresetsBaudRate = (query: string, cb: any) => {
     const commonBaudRate = [
         9600,
@@ -148,9 +154,19 @@ const connect = () => {
     const { labClient } = useLabClient()
     let interfaceInstance: IInterface | null = null;
     let protocolInstance: IProtocol | null = null;
+
+    if (unref(connectionState).connected) {
+        const { notify } = useNotify()
+        notify('连接状态异常','连接状态应该是[未连接]，但实际为[已连接]', 'error')
+        labClient.disconnect()
+        return;
+    }
+
     // Create interface instance
     if (selectedInterface.value === 'serial') {
         interfaceInstance = createSerialInterface(serialOptions.value)
+    } else if (selectedInterface.value === 'mock') {
+        interfaceInstance = createMockInterface()
     }
 
     // Create protocol instance
@@ -169,40 +185,11 @@ const connect = () => {
     labClient.connect()
 }
 
+const disconnect = () => {
+    const { labClient } = useLabClient()
+    labClient.disconnect()
+}
+
 
 </script>
-<style lang="scss">
-.lab-connect {
-    &-container {
-        padding: 0 12px;
-    }
-
-    &-title {
-        font-size: 14px;
-        font-weight: bold;
-        margin-bottom: 12px;
-    }
-
-    &-form {
-        .form-label {
-            font-size: 12px;
-            margin-bottom: 4px;
-        }
-
-        &-item {
-            margin-bottom: 8px;
-
-            .input-width {
-                width: 100% !important;
-            }
-
-            .input-label {
-                font-size: 10px;
-                color: rgb(143, 143, 143);
-                font-weight: bold;
-                margin-bottom: 4px;
-            }
-        }
-    }
-}
-</style>
+<style lang="scss" src="./style.scss" />

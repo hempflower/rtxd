@@ -1,18 +1,19 @@
 <template>
-    <div class="lab-workarea">
+    <div ref="workarea" class="lab-workarea">
         <WorkAreaBackground></WorkAreaBackground>
-        <el-tabs v-model="tabValue" type="card" closable>
-            <el-tab-pane v-for="item in tabs" :key="item.name" :label="item.title" :name="item.name">
-                {{ item.content }}
+        <el-tabs class="full-height" v-model="tabValue" type="card" closable>
+            <el-tab-pane lazy class="full-height" v-for="item in tabs" :key="item.name" :label="item.title" :name="item.name">
+                <LabEditor class="full-height"></LabEditor>
             </el-tab-pane>
         </el-tabs>
     </div>
 </template>
 <script lang="ts" setup>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import WorkAreaBackground from '@/components/WorkAreaBackground.vue'
+import LabEditor from '@/components/LabEditor.vue';
 
-const tabValue = ref('first')
+const tabValue = ref('aaa.panel')
 
 const tabs = [
     {
@@ -32,6 +33,7 @@ const tabs = [
     },
 ]
 
+
 </script>
 
 <style lang="scss">
@@ -44,5 +46,12 @@ const tabs = [
         padding: 0;
     }
 
+    .el-tabs__content {
+        height: calc(100% - 56px);
+    }
+
+    .lab-editor {
+        height: 100%;
+    }
 }
 </style>
