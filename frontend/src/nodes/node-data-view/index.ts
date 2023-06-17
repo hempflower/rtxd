@@ -1,6 +1,6 @@
 import { createHooksFromVue, LabNode } from "@/nodes/index";
 import type { LabNodeHooks, LabNodeContext } from "@/nodes";
-import LabNodeDataView from "@/nodes/components/LabNodeDataView.vue";
+import LabNodeDataView from "./node-view.vue";
 
 import { ref } from "vue";
 
@@ -63,7 +63,7 @@ export const createNodeDataViewHooks = (context: LabNodeContext): LabNodeHooks =
 };
 
 export default <LabNode>{
-  name: "lab-node-data-view",
+  name: "node-data-view",
   label: "数据显示",
   description: "显示输出的数据",
   vendor: "Evan Xiao",

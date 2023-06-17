@@ -1,11 +1,11 @@
 import { Component, createApp } from "vue";
 
 // Nodes
-import LabNodeDebug from "./lab-nodes/node-test";
-import LabNodeCounter from "./lab-nodes/node-counter";
-import LabNodeTimer from "./lab-nodes/node-timer";
-import LabNodeDataView from "./lab-nodes/node-data-view";
-import LabNodeConstNumber from "./lab-nodes/node-const-number"
+import LabNodeDebug from "./node-test";
+import LabNodeCounter from "./node-counter";
+import LabNodeTimer from "./node-timer";
+import LabNodeDataView from "./node-data-view";
+import LabNodeConstNumber from "./node-const-number"
 
 export type LabNodeHooks = {
   onCreate?: () => void;

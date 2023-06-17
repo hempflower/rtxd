@@ -14,6 +14,10 @@ export class DataOutputSocket extends ClassicPreset.Socket {
     get dataType() {
         return this._dataType;
     }
+
+    set dataType(value: string) {
+      this._dataType = value;
+    }
 }
 
 export class DataInputSocket extends ClassicPreset.Socket {

@@ -1,8 +1,8 @@
 import { createHooksFromVue, LabNode } from "@/nodes/index";
 import type { LabNodeHooks, LabNodeContext } from "@/nodes";
-import LabNodeDebug from "@/nodes/components/LabNodeDebug.vue";
+import LabNodeDebug from "./node-view.vue";
 
-export const createNodeTestHooks = (context: LabNodeContext): LabNodeHooks => {
+export const createNodeHooks = (context: LabNodeContext): LabNodeHooks => {
   const { onMount, onUnmount, app } = createHooksFromVue(LabNodeDebug);
 
   return {
@@ -27,10 +27,10 @@ export const createNodeTestHooks = (context: LabNodeContext): LabNodeHooks => {
 };
 
 export default <LabNode>{
-  name: "lab-node-test",
-  label: "测试节点",
-  description: "这是一个测试节点,早期阶段的测试节点",
-  vendor: "Evan Xiao",
+  name: "node-__name__",
+  label: "__label__(noCase)",
+  description: "__description__(noCase)",
+  vendor: "__vendor__(noCase)",
   inputs: [
     {
       name: "input1",
@@ -55,5 +55,5 @@ export default <LabNode>{
       type: "action",
     },
   ],
-  hooks: (context) => createNodeTestHooks(context),
+  hooks: (context) => createNodeHooks(context),
 };

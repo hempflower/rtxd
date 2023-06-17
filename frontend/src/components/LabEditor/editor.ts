@@ -23,7 +23,6 @@ import {
   LabNodeHooks,
   LabNodeContext,
 } from "@/nodes";
-import nodeCounter from "@/nodes/lab-nodes/node-counter";
 
 export interface LabEditor {
   start: () => void;

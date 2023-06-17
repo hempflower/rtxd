@@ -1,6 +1,6 @@
 import { createHooksFromVue,LabNode } from "@/nodes/index";
 import type { LabNodeHooks, LabNodeContext } from "@/nodes";
-import LabNodeCounter from "@/nodes/components/LabNodeCounter.vue";
+import LabNodeCounter from "./node-view.vue";
 
 import { ref } from "vue";
 
@@ -44,7 +44,7 @@ export const createNodeCounterHooks = (
 };
 
 export default <LabNode>{
-  name: "lab-node-counter",
+  name: "node-counter",
   label: "触发计数",
   description: "对触发输入进行计数",
   vendor: "Evan Xiao",

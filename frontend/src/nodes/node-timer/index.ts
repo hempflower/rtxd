@@ -1,6 +1,6 @@
 import { createHooksFromVue } from "@/nodes/index";
 import type { LabNodeContext, LabNodeHooks, LabNode } from "@/nodes";
-import LabNodeTimer from "@/nodes/components/LabNodeTimer.vue";
+import LabNodeTimer from "./node-view.vue";
 import ElementPlus from "element-plus";
 import { ref } from "vue";
 
@@ -69,7 +69,7 @@ export const createNodeTimerHooks = (context: LabNodeContext): LabNodeHooks => {
 };
 
 export default <LabNode>{
-  name: "lab-node-timer",
+  name: "node-timer",
   label: "定时器",
   description: "定时器节点,每隔一段时间触发一次",
   vendor: "Evan Xiao",

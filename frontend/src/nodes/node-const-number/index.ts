@@ -1,6 +1,6 @@
 import { createHooksFromVue, LabNode } from "@/nodes/index";
 import type { LabNodeHooks, LabNodeContext } from "@/nodes";
-import LabNodeConstNumber from "@/nodes/components/LabNodeConstNumber.vue";
+import LabNodeConstNumber from "./node-view.vue";
 import ElementPlus from "element-plus";
 import { ref } from "vue";
 
@@ -34,7 +34,7 @@ export const createNodeConstNumberHooks = (context: LabNodeContext): LabNodeHook
 };
 
 export default <LabNode>{
-  name: "lab-node-const-number",
+  name: "node-const-number",
   label: "数值常量",
   description: "提供一个数值常量",
   vendor: "Evan Xiao",
