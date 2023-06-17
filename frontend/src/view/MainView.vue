@@ -1,23 +1,11 @@
 <template>
     <div class="full-height-container">
         <MenuBar :menu="menuList"></MenuBar>
-
-
         <div class="workspace-container">
-            <SplitPanel :left-min-width="280" :left-max-width="400" :left-width="256">
-                <template #left>
-                    <div class="full-height-container">
-                        <SidePanel></SidePanel>
-                    </div>
-                </template>
-                <template #right>
-                    <div class="full-height-container">
-                        <WorkArea></WorkArea>
-                    </div>
-                </template>
-            </SplitPanel>
+            <div class="full-height-container">
+                <WorkArea></WorkArea>
+            </div>
         </div>
-
     </div>
 </template>
 
