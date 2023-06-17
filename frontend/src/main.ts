@@ -25,7 +25,7 @@ for (const [key, component] of Object.entries(ElementPlusIconsVue)) {
   app.component(key, component);
 }
 
-app.config.errorHandler = (err, vm, info) => {
+app.config.errorHandler = (err) => {
   // Show error in console
   console.error(err);
   // Show error by notification
