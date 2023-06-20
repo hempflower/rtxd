@@ -349,6 +349,7 @@ export const createEditor = async (
 
   const nodes = getNodes();
   const hooksMap: Map<string, LabNodeHooks> = new Map();
+  const dataMap: Map<string, string> = new Map();
 
   // Connection Manager
   // Key as target input, value as source output
@@ -419,8 +420,13 @@ export const createEditor = async (
       updateNode: () => {
         // Update connection
         area.update('node', node.id)
-
-      }
+      },
+      loadData: () => {
+        return dataMap.get(node.id) ?? "";
+      },
+      saveData: (data: string) => {
+        dataMap.set(node.id, data);
+      },
     };
   };
 

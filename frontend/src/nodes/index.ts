@@ -68,6 +68,8 @@ export interface LabNodeContext {
     data?: ActionPayload
   ): void;
   updateNode(): void;
+  loadData(): string;
+  saveData(data: string): void;
 }
 
 export const createHooksFromVue = (
