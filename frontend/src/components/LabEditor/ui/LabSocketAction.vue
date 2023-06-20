@@ -7,7 +7,7 @@ const props = defineProps(['data'])
 
 </script>
 <style lang="scss" scoped>
-@import "./vars.scss";
+@import "@/vars.scss";
 .socket {
     cursor: pointer;
     width: $socket-size * 2;

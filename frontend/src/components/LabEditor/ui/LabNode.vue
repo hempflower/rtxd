@@ -138,7 +138,7 @@ const controls = computed(() => {
 </script>
 
 <style lang="scss" scoped>
-@import "./vars.scss";
+@import "@/vars.scss";
 
 .node {
 
