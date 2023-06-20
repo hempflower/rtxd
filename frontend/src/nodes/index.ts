@@ -8,6 +8,7 @@ import LabNodeDataView from "./node-data-view";
 import LabNodeConstNumber from "./node-const-number";
 import LabNodeSerialControl from "./node-serial-control";
 import LabNodeTextBuffer from "./node-text-buffer";
+import LabNodeTextSender from "./node-text-sender";
 
 export type LabNodeHooks = {
   onCreate?: () => void;
@@ -98,6 +99,7 @@ const nodes: LabNode[] = [
   LabNodeConstNumber,
   LabNodeSerialControl,
   LabNodeTextBuffer,
+  LabNodeTextSender,
 ];
 
 export const getNodes = (): LabNode[] => {
