@@ -5,7 +5,9 @@ import LabNodeDebug from "./node-test";
 import LabNodeCounter from "./node-counter";
 import LabNodeTimer from "./node-timer";
 import LabNodeDataView from "./node-data-view";
-import LabNodeConstNumber from "./node-const-number"
+import LabNodeConstNumber from "./node-const-number";
+import LabNodeSerialControl from "./node-serial-control";
+import LabNodeTextBuffer from "./node-text-buffer";
 
 export type LabNodeHooks = {
   onCreate?: () => void;
@@ -14,32 +16,37 @@ export type LabNodeHooks = {
   onUnmount: () => void;
   onStart?: () => void;
   onStop?: () => void;
-  onAction?: (name: string) => void;
-  onDataOutput?: (name: string) => unknown;
+  onAction?: (name: string,data?: ActionPayload) => void;
+  onDataOutput?: (name: string) => {
+    data: unknown;
+    type: string;
+  } | { data: null; type: null } | undefined;
 };
 
-export type LabNodeInput =
-  | {
-      name: string;
-      label: string;
-      type: string[];
-    }
-  | {
-      name: string;
-      label: string;
-      type: "action";
-    };
+export type ActionPayload = {
+  data: unknown;
+  type: string;
+};
+
+export type LabNodeInput = {
+  name: string;
+  label: string;
+  type: "data" | "action";
+  dataType: string[];
+};
 
 export type LabNodeOuput =
   | {
       name: string;
       label: string;
-      type: string;
+      type: "data";
+      dataType: string;
     }
   | {
       name: string;
       label: string;
       type: "action";
+      dataType?: string;
     };
 
 export type LabNode = {
@@ -56,7 +63,11 @@ export interface LabNodeContext {
   readInput(
     name: string
   ): { data: unknown; type: string } | { data: null; type: null };
-  invokeAction(name: string): void;
+  invokeAction(
+    name: string,
+    data?: ActionPayload
+  ): void;
+  updateNode(): void;
 }
 
 export const createHooksFromVue = (
@@ -83,6 +94,8 @@ const nodes: LabNode[] = [
   LabNodeTimer,
   LabNodeDataView,
   LabNodeConstNumber,
+  LabNodeSerialControl,
+  LabNodeTextBuffer,
 ];
 
 export const getNodes = (): LabNode[] => {

@@ -35,7 +35,10 @@ export const createNodeCounterHooks = (
     },
     onDataOutput: (name: string) => {
       if (name === "count") {
-        return count.value;
+        return {
+          data: count.value,
+          type: "number",
+        };
       }
     },
     onMount,
@@ -53,17 +56,20 @@ export default <LabNode>{
       name: "trigger",
       label: "计数",
       type: "action",
+      dataType: [],
     },
     {
       name: "reset",
       label: "重置",
       type: "action",
+      dataType: [],
     }
   ],
   outputs: [{
     name: "count",
     label: "计数",
-    type: "number",
+    type: "data",
+    dataType: "number",
   }],
   hooks: (node) =>  createNodeCounterHooks(node),
 }

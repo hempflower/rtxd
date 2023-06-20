@@ -1,10 +1,12 @@
 import { createHooksFromVue, LabNode } from "@/nodes/index";
-import type { LabNodeHooks, LabNodeContext } from "@/nodes";
+import type { LabNodeHooks, LabNodeContext, ActionPayload } from "@/nodes";
 import LabNodeDataView from "./node-view.vue";
 
 import { ref } from "vue";
 
-export const createNodeDataViewHooks = (context: LabNodeContext): LabNodeHooks => {
+export const createNodeDataViewHooks = (
+  context: LabNodeContext
+): LabNodeHooks => {
   const { onMount, onUnmount, app } = createHooksFromVue(LabNodeDataView);
 
   const dataText = ref("null");
@@ -15,7 +17,7 @@ export const createNodeDataViewHooks = (context: LabNodeContext): LabNodeHooks =
     if (input.data === null) {
       dataText.value = "null";
     } else {
-      dataText.value = JSON.stringify(input.data);
+      showData(input.data, input.type);
     }
   };
 
@@ -34,6 +36,21 @@ export const createNodeDataViewHooks = (context: LabNodeContext): LabNodeHooks =
     }
   };
 
+  const showData = (data: unknown, type: string) => {
+    // Workaround for bytes
+    if (type === "bytes") {
+      // Hex style
+      const bytes = new Uint8Array(data as ArrayBuffer);
+      let text = "(HEX) ";
+      for (let i = 0; i < bytes.length; i++) {
+        text += bytes[i].toString(16).padStart(2, "0") + " ";
+      }
+      dataText.value = text;
+
+    } else {
+      dataText.value = JSON.stringify(data);
+    }
+  };
 
   return {
     onCreate: () => {
@@ -57,6 +74,15 @@ export const createNodeDataViewHooks = (context: LabNodeContext): LabNodeHooks =
 
       dataText.value = "null";
     },
+    onAction: (name: string, data?: ActionPayload) => {
+      if (name === "on_input") {
+        if (data?.data) {
+          // if use action input, clear timer
+          stopTimer();
+          showData(data.data, data.type);
+        }
+      }
+    },
     onMount,
     onUnmount,
   };
@@ -71,7 +97,14 @@ export default <LabNode>{
     {
       name: "input",
       label: "数据",
-      type: [],
+      type: "data",
+      dataType: [],
+    },
+    {
+      name: "on_input",
+      label: "触发输入",
+      type: "action",
+      dataType: [],
     },
   ],
   outputs: [],

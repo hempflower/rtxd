@@ -4,7 +4,9 @@ import LabNodeConstNumber from "./node-view.vue";
 import ElementPlus from "element-plus";
 import { ref } from "vue";
 
-export const createNodeConstNumberHooks = (context: LabNodeContext): LabNodeHooks => {
+export const createNodeConstNumberHooks = (
+  context: LabNodeContext
+): LabNodeHooks => {
   const { onMount, onUnmount, app } = createHooksFromVue(LabNodeConstNumber);
   app.use(ElementPlus);
 
@@ -20,13 +22,15 @@ export const createNodeConstNumberHooks = (context: LabNodeContext): LabNodeHook
         context.invokeAction(name);
       });
 
-    app.provide("value", value);
-
+      app.provide("value", value);
     },
     onDataOutput: (name: string) => {
-        if (name === "output") {
-            return value.value;
-        }
+      if (name === "output") {
+        return {
+          data: value.value,
+          type: "number",
+        };
+      }
     },
     onMount,
     onUnmount,
@@ -43,7 +47,8 @@ export default <LabNode>{
     {
       name: "output",
       label: "数值",
-      type: "number",
+      type: "data",
+      dataType: "number",
     },
   ],
   hooks: (context) => createNodeConstNumberHooks(context),

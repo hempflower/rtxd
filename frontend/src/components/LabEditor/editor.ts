@@ -12,7 +12,12 @@ import LabSocketAction from "./ui/LabSocketAction.vue";
 import LabSocketData from "./ui/LabSocketData.vue";
 import LabNodeBody from "./ui/LabNodeBody.vue";
 
-import { DataInputSocket, DataOutputSocket, ActionSocket } from "./socket";
+import {
+  DataInputSocket,
+  DataOutputSocket,
+  ActionInputSocket,
+  ActionOuputSocket,
+} from "./socket";
 
 import { ref } from "vue";
 import type { Ref } from "vue";
@@ -22,12 +27,14 @@ import {
   LabNode as LabNodeType,
   LabNodeHooks,
   LabNodeContext,
+  ActionPayload,
 } from "@/nodes";
 
 export interface LabEditor {
   start: () => void;
   stop: () => void;
   destory: () => void;
+  addNode: (name: string) => void;
   running: Ref<boolean>;
   editor: NodeEditor<Schemes>;
   autoZoom: () => void;
@@ -71,12 +78,18 @@ const createNodeFromConfig = (
     if (input.type === "action") {
       node.addInput(
         input.name,
-        new ClassicPreset.Input(new ActionSocket(), input.label)
+        new ClassicPreset.Input(
+          new ActionInputSocket(input.dataType),
+          input.label
+        )
       );
     } else {
       node.addInput(
         input.name,
-        new ClassicPreset.Input(new DataInputSocket(input.type), input.label)
+        new ClassicPreset.Input(
+          new DataInputSocket(input.dataType),
+          input.label
+        )
       );
     }
   }
@@ -85,7 +98,10 @@ const createNodeFromConfig = (
     if (output.type === "action") {
       node.addOutput(
         output.name,
-        new ClassicPreset.Output(new ActionSocket(), output.label)
+        new ClassicPreset.Output(
+          new ActionOuputSocket(output.dataType ?? ""),
+          output.label
+        )
       );
     } else {
       node.addOutput(
@@ -119,7 +135,10 @@ const createLabRenderPreset = () => {
         ) {
           return LabSocketData;
         }
-        if (data.payload instanceof ActionSocket) {
+        if (
+          data.payload instanceof ActionInputSocket ||
+          data.payload instanceof ActionOuputSocket
+        ) {
           return LabSocketAction;
         }
         return LabSocketData;
@@ -178,10 +197,10 @@ const createLabConnectionPreset = (editor: NodeEditor<Schemes>) => {
         }
 
         if (
-          inputSocket instanceof ActionSocket &&
-          outputSocket instanceof ActionSocket
+          inputSocket instanceof ActionInputSocket &&
+          outputSocket instanceof ActionOuputSocket
         ) {
-          return true;
+          return inputSocket.canBeConnected(outputSocket);
         }
 
         return false;
@@ -206,7 +225,10 @@ const updateConnectionMap = (
       string,
       () => { data: unknown; type: string } | { data: null; type: null }
     >;
-    actionConnectionMap: Map<PortId, Map<PortId, () => void>>;
+    actionConnectionMap: Map<
+      PortId,
+      Map<PortId, (data?: ActionPayload) => void>
+    >;
   },
   hooksMap: Map<string, LabNodeHooks>,
   data: {
@@ -242,7 +264,6 @@ const updateConnectionMap = (
         return;
       }
       connectionMaps.dataConnectionMap.set(portId, () => {
-        const dataType = (sourceOutputPort.socket as DataOutputSocket).dataType;
         const data0 = hooks.onDataOutput?.(data.sourceOutput) ?? null;
         if (data0 === null) {
           return {
@@ -250,9 +271,21 @@ const updateConnectionMap = (
             type: null,
           };
         } else {
+          // check data type
+          const inputSocket = targetInputPort.socket as DataInputSocket;
+          if (inputSocket.acceptsTypes.length === 0) {
+            return data0;
+          }
+          if (
+            data0.type !== null &&
+            inputSocket.acceptsTypes.includes(data0.type)
+          ) {
+            return data0;
+          }
+
           return {
-            data: data0,
-            type: dataType,
+            data: null,
+            type: null,
           };
         }
       });
@@ -260,8 +293,8 @@ const updateConnectionMap = (
       connectionMaps.dataConnectionMap.delete(portId);
     }
   } else if (
-    sourceOutputPort.socket instanceof ActionSocket &&
-    targetInputPort.socket instanceof ActionSocket
+    sourceOutputPort.socket instanceof ActionOuputSocket &&
+    targetInputPort.socket instanceof ActionInputSocket
   ) {
     const portId = createPortId(data.source, data.sourceOutput);
     if (action === "create") {
@@ -270,10 +303,27 @@ const updateConnectionMap = (
         return;
       }
       const actionHooks =
-        connectionMaps.actionConnectionMap.get(portId) ?? new Map();
-      actionHooks.set(createPortId(data.target, data.targetInput), () => {
-        hooks.onAction?.(data.targetInput);
-      });
+        connectionMaps.actionConnectionMap.get(portId) ??
+        new Map<PortId, (data?: ActionPayload) => void>();
+      actionHooks.set(
+        createPortId(data.target, data.targetInput),
+        (payload?: ActionPayload) => {
+          // type check
+          const inputSocket = targetInputPort.socket as ActionInputSocket;
+          if (inputSocket.acceptsTypes.length === 0) {
+            // no type check
+            hooks.onAction?.(data.targetInput, payload);
+          } else {
+            // type check
+            if (
+              payload?.type &&
+              inputSocket.acceptsTypes.includes(payload?.type)
+            ) {
+              hooks.onAction?.(data.targetInput, payload);
+            }
+          }
+        }
+      );
       connectionMaps.actionConnectionMap.set(portId, actionHooks);
     } else {
       const actionHooks = connectionMaps.actionConnectionMap.get(portId);
@@ -306,7 +356,10 @@ export const createEditor = async (
     string,
     () => { data: unknown; type: string } | { data: null; type: null }
   >();
-  const actionConnectionMap = new Map<PortId, Map<PortId, () => void>>();
+  const actionConnectionMap = new Map<
+    PortId,
+    Map<PortId, (data?: ActionPayload) => void>
+  >();
 
   editor.addPipe((context) => {
     if (["connectioncreated", "connectionremoved"].includes(context.type)) {
@@ -328,24 +381,46 @@ export const createEditor = async (
   const createNodeContext = (node: ClassicPreset.Node): LabNodeContext => {
     return {
       readInput: (name: string) => {
-        return (
-          dataConnectionMap.get(createPortId(node.id, name))?.() ?? {
+        // check data type
+        const input = node.inputs[name];
+        if (!input) {
+          return {
             data: null,
             type: null,
-          }
-        );
+          };
+        }
+
+        const data = dataConnectionMap.get(createPortId(node.id, name))?.() ?? {
+          data: null,
+          type: null,
+        };
+
+        if (data === null) {
+          return {
+            data: null,
+            type: null,
+          };
+        }
+
+        return data;
       },
-      invokeAction: (name: string) => {
+      invokeAction: (name: string, data?: ActionPayload) => {
         const actionHooks = actionConnectionMap.get(
           createPortId(node.id, name)
         );
         if (!actionHooks) {
           return;
         }
+
         actionHooks.forEach((hook) => {
-          hook();
+          hook(data);
         });
       },
+      updateNode: () => {
+        // Update connection
+        area.update('node', node.id)
+
+      }
     };
   };
 
@@ -379,39 +454,33 @@ export const createEditor = async (
 
   AreaExtensions.simpleNodesOrder(area);
 
-  // Add first node
-  const { node: node1, hooks: hooks1 } = createNodeFromConfig(
-    nodes[1],
-    (node) => createNodeContext(node)
-  );
-  const { node: node2, hooks: hooks2 } = createNodeFromConfig(
-    nodes[1],
-    (node) => createNodeContext(node)
-  );
-  const { node: node3, hooks: hooks3 } = createNodeFromConfig(
-    nodes[2],
-    (node) => createNodeContext(node)
-  );
-  const { node: node4, hooks: hooks4 } = createNodeFromConfig(
-    nodes[3],
-    (node) => createNodeContext(node)
-  );
-  const { node: node5, hooks: hooks5 } = createNodeFromConfig(
-    nodes[4],
-    (node) => createNodeContext(node)
-  );
+  // Add nodes
+  let loc_offset = 0;
+  nodes.forEach(async (node) => {
+    const { node: node0, hooks } = createNodeFromConfig(node, (node) =>
+      createNodeContext(node)
+    );
+    hooksMap.set(node0.id, hooks);
+    await editor.addNode(node0);
 
-  hooksMap.set(node1.id, hooks1);
-  hooksMap.set(node2.id, hooks2);
-  hooksMap.set(node3.id, hooks3);
-  hooksMap.set(node4.id, hooks4);
-  hooksMap.set(node5.id, hooks5);
+    area.translate(node0.id, {
+      x: loc_offset,
+      y: 0,
+    });
+    loc_offset += 240;
+  });
 
-  await editor.addNode(node1);
-  await editor.addNode(node2);
-  await editor.addNode(node3);
-  await editor.addNode(node4);
-  await editor.addNode(node5);
+  const addNode = async (name: string) => {
+    const node = nodes.find((node) => node.name === name);
+    if (!node) {
+      return;
+    }
+    const { node: node0, hooks } = createNodeFromConfig(node, (node) =>
+      createNodeContext(node)
+    );
+    hooksMap.set(node0.id, hooks);
+    await editor.addNode(node0);
+  };
 
   AreaExtensions.zoomAt(area, editor.getNodes());
 
@@ -419,6 +488,7 @@ export const createEditor = async (
     destory: () => area.destroy(),
     start,
     stop,
+    addNode,
     running,
     editor,
     autoZoom: () => AreaExtensions.zoomAt(area, editor.getNodes()),
