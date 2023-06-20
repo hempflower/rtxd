@@ -46,6 +46,13 @@ export const createNodeHooks = (context: LabNodeContext): LabNodeHooks => {
         }
         // Id data is bytes, convert to string
         if (data?.type === "bytes") {
+
+          // Check if encoding is set
+          let encoding = context.readInput("encoding").data as string;
+          if (encoding === "") {
+            encoding = "utf-8";
+          }
+
           const decoder = new TextDecoder();
           const text = decoder.decode(data.data as ArrayBuffer);
 
@@ -100,6 +107,12 @@ export default <LabNode>{
       label: "自动滚动",
       type: "data",
       dataType: ["boolean"],
+    },
+    {
+      name: "encoding",
+      label: "字符编码",
+      type: "data",
+      dataType: ["string"],
     }
   ],
   outputs: [],
