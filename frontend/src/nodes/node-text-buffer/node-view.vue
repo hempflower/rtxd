@@ -33,7 +33,6 @@ const activeBorder = ref([
 onMounted(() => {
 
     watch(scrollNotify, () => {
-        console.log(scroll)
         if (scroll.value && scroll.value.wrapRef) {
             scroll.value.setScrollTop(scroll.value.wrapRef?.scrollHeight)
         }
