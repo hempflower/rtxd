@@ -9,6 +9,7 @@ import LabNodeConstNumber from "./node-const-number";
 import LabNodeSerialControl from "./node-serial-control";
 import LabNodeTextBuffer from "./node-text-buffer";
 import LabNodeTextSender from "./node-text-sender";
+import LabNodeStringToBytes from "./node-string-to-bytes";
 
 export type LabNodeHooks = {
   onCreate?: () => void;
@@ -17,11 +18,14 @@ export type LabNodeHooks = {
   onUnmount: () => void;
   onStart?: () => void;
   onStop?: () => void;
-  onAction?: (name: string,data?: ActionPayload) => void;
-  onDataOutput?: (name: string) => {
-    data: unknown;
-    type: string;
-  } | { data: null; type: null } | undefined;
+  onAction?: (name: string, data?: ActionPayload) => void;
+  onDataOutput?: (name: string) =>
+    | {
+        data: unknown;
+        type: string;
+      }
+    | { data: null; type: null }
+    | undefined;
 };
 
 export type ActionPayload = {
@@ -64,10 +68,7 @@ export interface LabNodeContext {
   readInput(
     name: string
   ): { data: unknown; type: string } | { data: null; type: null };
-  invokeAction(
-    name: string,
-    data?: ActionPayload
-  ): void;
+  invokeAction(name: string, data?: ActionPayload): void;
   updateNode(): void;
   loadData(): string;
   saveData(data: string): void;
@@ -100,6 +101,7 @@ const nodes: LabNode[] = [
   LabNodeSerialControl,
   LabNodeTextBuffer,
   LabNodeTextSender,
+  LabNodeStringToBytes,
 ];
 
 export const getNodes = (): LabNode[] => {
