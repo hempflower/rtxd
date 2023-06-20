@@ -58,7 +58,7 @@ export const createNodeHooks = (context: LabNodeContext): LabNodeHooks => {
 
           textBuffer.value += text;
         } else {
-          textBuffer.value += data;
+          textBuffer.value += data.data as string;
         }
 
         // Auto scroll
