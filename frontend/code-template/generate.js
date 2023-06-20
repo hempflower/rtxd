@@ -32,7 +32,7 @@ generateTemplateFiles([
         pathAndFileNameDefaultCase: '(kebabCase)',
     },
     onComplete: () => {
-      console.log(`Node created! Don't forget to add it to the @/nodes/index.ts file!`)
+      console.log(`Node created! Don't forget to add it to the @/nodes/index.ts!`)
     }
   },
 ]);
