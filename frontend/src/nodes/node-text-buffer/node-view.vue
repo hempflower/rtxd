@@ -56,6 +56,7 @@ onMounted(() => {
         user-select: text;
 
         font-size: 18px;
+        font-family: 'CascadiaMono', 'Consolas', 'Courier New', 'Courier', 'monospace';
     }
 }
 </style>
