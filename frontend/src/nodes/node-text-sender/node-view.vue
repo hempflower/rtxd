@@ -26,10 +26,11 @@ const appendLine = inject('appendLine', ref(false))
 const placeholder = ref('请输入内容, 回车换行')
 
 watch(
-    () => enterSend,
+    enterSend,
     (val) => {
-        placeholder.value = val ? '请输入内容, \'Shift + 回车\'换行' : '请输入内容，\'回车\'换行'
+        placeholder.value = (val ? '请输入内容, \'Shift + 回车\'换行' : '请输入内容，\'回车\'换行')
     },
+    { immediate: true }
 )
 
 watch(

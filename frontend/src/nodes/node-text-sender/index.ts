@@ -19,8 +19,22 @@ export const createNodeHooks = (context: LabNodeContext): LabNodeHooks => {
       return;
     }
 
+    const textField = inputText.value;
+    const exInput = context.readInput("text");
+
+    let text = "";
+
+    // 优先使用 textField 的内容
+    if (textField) {
+      text = textField;
+    } else if (exInput.data && exInput.type === "string") {
+      text = exInput.data as string;
+    } else {
+      return;
+    }
+
     context.invokeAction("output", {
-      data: appendLine.value ? inputText.value + "\n" : inputText.value,
+      data: appendLine.value ? text + "\n" : text,
       type: "string",
     });
   };
@@ -52,6 +66,11 @@ export const createNodeHooks = (context: LabNodeContext): LabNodeHooks => {
     onStop: () => {
       //
       running.value = false;
+    },
+    onAction: (name: string) => {
+      if (name === "send") {
+        sendText();
+      }
     },
     onMount,
     onUnmount,
