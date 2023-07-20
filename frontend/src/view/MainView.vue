@@ -12,8 +12,6 @@
 <script lang="ts" setup>
 // Components
 import MenuBar from '@/components/MenuBar.vue'
-import SplitPanel from '@/components/SplitPanel.vue'
-import SidePanel from '@/components/SidePanel.vue'
 import WorkArea from '@/components/WorkArea.vue';
 
 // Composables
