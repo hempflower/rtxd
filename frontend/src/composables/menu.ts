@@ -5,25 +5,25 @@ const menuList = [
     title: "文件",
     items: [
       {
-        title: "新建面板",
+        title: "新建",
         action: () => {
           console.log("新建");
         },
       },
       {
-        title: "打开面板",
+        title: "打开",
         action: () => {
           console.log("打开");
         },
       },
       {
-        title: "保存面板",
+        title: "保存",
         action: () => {
           console.log("保存");
         },
       },
       {
-        title: "面板另存为...",
+        title: "另存为...",
         action: () => {
           console.log("另存为");
         },
