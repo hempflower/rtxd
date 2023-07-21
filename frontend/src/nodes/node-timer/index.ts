@@ -28,7 +28,7 @@ export const createNodeTimerHooks = (context: LabNodeContext): LabNodeHooks => {
   };
 
   return {
-    onCreate: () => {
+    onCreated: () => {
       app.provide("readInput", (name: string) => {
         return context.readInput(name);
       });
@@ -57,7 +57,7 @@ export const createNodeTimerHooks = (context: LabNodeContext): LabNodeHooks => {
       //
       stopTimer();
     },
-    onDestrory: () => {
+    onDestroy: () => {
       //
       if (timer.value) {
         window.clearInterval(timer.value);

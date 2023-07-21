@@ -59,7 +59,7 @@ export class ActionInputSocket extends ClassicPreset.Socket {
   }
 
   canBeConnected(otherSocket: ClassicPreset.Socket) {
-    if (otherSocket instanceof ActionOuputSocket) {
+    if (otherSocket instanceof ActionOutputSocket) {
       // If this output socket set type as '*' , then it can be connected to any output socket
       if (otherSocket.dataType === "*") {
         return true;
@@ -76,7 +76,7 @@ export class ActionInputSocket extends ClassicPreset.Socket {
 /**
  * Just marks a socket as an action socket
  */
-export class ActionOuputSocket extends ClassicPreset.Socket {
+export class ActionOutputSocket extends ClassicPreset.Socket {
   private _dataType: string;
 
   constructor(dataType: string) {

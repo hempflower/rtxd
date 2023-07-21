@@ -14,7 +14,7 @@ export const createNodeHooks = (context: LabNodeContext): LabNodeHooks => {
   const scrollNotify = ref(false);
 
   return {
-    onCreate: () => {
+    onCreated: () => {
       app.provide("readInput", (name: string) => {
         return context.readInput(name);
       });
@@ -48,12 +48,12 @@ export const createNodeHooks = (context: LabNodeContext): LabNodeHooks => {
         if (data?.type === "bytes") {
 
           // Check if encoding is set
-          let encoding = context.readInput("encoding").data as string;
-          if (encoding === "") {
+          let encoding = context.readInput("encoding")?.data as string | undefined;
+          if (!encoding) {
             encoding = "utf-8";
           }
 
-          const decoder = new TextDecoder();
+          const decoder = new TextDecoder(encoding);
           const text = decoder.decode(data.data as ArrayBuffer);
 
           textBuffer.value += text;
@@ -62,7 +62,7 @@ export const createNodeHooks = (context: LabNodeContext): LabNodeHooks => {
         }
 
         // Auto scroll
-        if (context.readInput("autoScroll").data) {
+        if (context.readInput("autoScroll")?.data) {
           scrollNotify.value = !scrollNotify.value;
         }
 

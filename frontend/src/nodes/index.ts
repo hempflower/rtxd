@@ -12,8 +12,8 @@ import LabNodeTextSender from "./node-text-sender";
 import LabNodeStringToBytes from "./node-string-to-bytes";
 
 export type LabNodeHooks = {
-  onCreate?: () => void;
-  onDestrory?: () => void;
+  onCreated?: () => void;
+  onDestroy?: () => void;
   onMount: (element: HTMLElement) => void;
   onUnmount: () => void;
   onStart?: () => void;
@@ -24,8 +24,7 @@ export type LabNodeHooks = {
         data: unknown;
         type: string;
       }
-    | { data: null; type: null }
-    | undefined;
+    | null;
 };
 
 export type ActionPayload = {
@@ -40,7 +39,7 @@ export type LabNodeInput = {
   dataType: string[];
 };
 
-export type LabNodeOuput =
+export type LabNodeOutput =
   | {
       name: string;
       label: string;
@@ -61,13 +60,13 @@ export type LabNode = {
   vendor?: string;
   hooks: (context: LabNodeContext) => LabNodeHooks;
   inputs: LabNodeInput[];
-  outputs: LabNodeOuput[];
+  outputs: LabNodeOutput[];
 };
 
 export interface LabNodeContext {
   readInput(
     name: string
-  ): { data: unknown; type: string } | { data: null; type: null };
+  ): { data: unknown; type: string } | null;
   invokeAction(name: string, data?: ActionPayload): void;
   updateNode(): void;
   loadData(): string;

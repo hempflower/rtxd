@@ -21,9 +21,9 @@
 </template>
 <script setup lang="ts">
 import { ref, watch, onMounted, onBeforeUnmount } from 'vue'
-import { LabEditor, createEditor } from '@/components/LabEditor/editor';
+import { LabEditor, createEditor } from '@/editor/editor';
 
-import EditorBackground from '@/components/LabEditor/EditorBackground.vue'
+import EditorBackground from '@/editor/EditorBackground.vue'
 
 import {
     FullScreen,
@@ -50,7 +50,7 @@ onMounted(async () => {
 })
 
 onBeforeUnmount(() => {
-    editorInstance?.destory()
+    editorInstance?.destroy()
 })
 
 const autoZoom = () => {

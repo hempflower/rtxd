@@ -10,7 +10,7 @@ export const createNodeHooks = (context: LabNodeContext): LabNodeHooks => {
   app.use(ElementPlus);
 
   return {
-    onCreate: () => {
+    onCreated: () => {
       app.provide("readInput", (name: string) => {
         return context.readInput(name);
       });
@@ -39,19 +39,19 @@ export const createNodeHooks = (context: LabNodeContext): LabNodeHooks => {
     },
     onDataOutput: () => {
       const input = context.readInput("input");
-      if (!input.type) {
-        return;
+      if (!input) {
+        return null;
       }
 
       if (input.type === "string") {
         const bytes = new TextEncoder().encode(input.data as string).buffer;
-
         return {
           data: bytes,
           type: "bytes",
         } 
       }
 
+      return null;
     },
     onMount,
     onUnmount,

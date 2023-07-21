@@ -12,7 +12,7 @@ export const createNodeCounterHooks = (
   const { onMount, onUnmount, app } = createHooksFromVue(LabNodeCounter);
 
   return {
-    onCreate: () => {
+    onCreated: () => {
       app.provide("readInput", (name: string) => {
         return context.readInput(name);
       });
@@ -40,6 +40,8 @@ export const createNodeCounterHooks = (
           type: "number",
         };
       }
+
+      return null;
     },
     onMount,
     onUnmount,

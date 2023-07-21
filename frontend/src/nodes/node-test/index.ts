@@ -22,7 +22,7 @@ export const createNodeTestHooks = (context: LabNodeContext): LabNodeHooks => {
   const timer = ref<number>();
 
   return {
-    onCreate: () => {
+    onCreated: () => {
       app.provide("readInput", (name: string) => {
         return context.readInput(name);
       });

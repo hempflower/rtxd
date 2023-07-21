@@ -19,6 +19,7 @@ func main() {
 	app := NewApp()
 
 	labSerial := NewLabSerial()
+	labDoc := NewLabDocument()
 
 	// Create application with options
 	err := wails.Run(&options.App{
@@ -34,10 +35,12 @@ func main() {
 		OnStartup: func(ctx context.Context) {
 			app.startup(ctx)
 			labSerial.SetContext(ctx)
+			labDoc.setContext(ctx)
 		},
 		Bind: []interface{}{
 			app,
 			labSerial,
+			labDoc,
 		},
 		Debug: options.Debug{
 			OpenInspectorOnStartup: true,

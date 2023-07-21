@@ -13,7 +13,7 @@ export const createNodeConstNumberHooks = (
   const value = ref(0);
 
   return {
-    onCreate: () => {
+    onCreated: () => {
       app.provide("readInput", (name: string) => {
         return context.readInput(name);
       });
@@ -31,6 +31,8 @@ export const createNodeConstNumberHooks = (
           type: "number",
         };
       }
+
+      return null;
     },
     onMount,
     onUnmount,

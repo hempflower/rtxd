@@ -14,7 +14,7 @@ export const createNodeDataViewHooks = (
 
   const readInput = (name: string) => {
     const input = context.readInput(name);
-    if (input.data === null) {
+    if (!input) {
       dataText.value = "null";
     } else {
       showData(input.data, input.type);
@@ -53,7 +53,7 @@ export const createNodeDataViewHooks = (
   };
 
   return {
-    onCreate: () => {
+    onCreated: () => {
       app.provide("readInput", (name: string) => {
         return context.readInput(name);
       });

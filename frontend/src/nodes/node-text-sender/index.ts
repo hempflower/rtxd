@@ -27,7 +27,7 @@ export const createNodeHooks = (context: LabNodeContext): LabNodeHooks => {
     // 优先使用 textField 的内容
     if (textField) {
       text = textField;
-    } else if (exInput.data && exInput.type === "string") {
+    } else if (exInput && exInput.type === "string") {
       text = exInput.data as string;
     } else {
       return;
@@ -44,7 +44,7 @@ export const createNodeHooks = (context: LabNodeContext): LabNodeHooks => {
   };
 
   return {
-    onCreate: () => {
+    onCreated: () => {
       app.provide("readInput", (name: string) => {
         return context.readInput(name);
       });

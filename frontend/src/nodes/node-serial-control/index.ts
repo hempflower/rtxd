@@ -81,7 +81,7 @@ export const createNodeHooks = (context: LabNodeContext): LabNodeHooks => {
   };
 
   return {
-    onCreate: () => {
+    onCreated: () => {
       app.provide("readInput", (name: string) => {
         return context.readInput(name);
       });
