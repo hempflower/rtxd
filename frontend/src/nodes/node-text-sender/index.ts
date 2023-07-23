@@ -82,6 +82,7 @@ export default <LabNode>{
   label: "文字发送",
   description: "将输入的文字以操作形式发送出去",
   vendor: "Evan Xiao",
+  category: "文本",
   inputs: [
     {
       name: "text",

@@ -58,6 +58,7 @@ export type LabNode = {
   label: string;
   description?: string;
   vendor?: string;
+  category?: string;
   hooks: (context: LabNodeContext) => LabNodeHooks;
   inputs: LabNodeInput[];
   outputs: LabNodeOutput[];
@@ -103,6 +104,6 @@ const nodes: LabNode[] = [
   LabNodeStringToBytes,
 ];
 
-export const getNodes = (): LabNode[] => {
+export const getRegisteredNodes = (): LabNode[] => {
   return nodes;
 };

@@ -1,10 +1,7 @@
-import { NodeEditor, GetSchemes, ClassicPreset } from "rete";
+import { NodeEditor, ClassicPreset } from "rete";
 import { AreaPlugin, AreaExtensions } from "rete-area-plugin";
-import {
-  ClassicFlow,
-  ConnectionPlugin,
-} from "rete-connection-plugin";
-import { VueRenderPlugin, Presets, VueArea2D } from "rete-vue-render-plugin";
+import { ClassicFlow, ConnectionPlugin } from "rete-connection-plugin";
+import { VueRenderPlugin, Presets } from "rete-vue-render-plugin";
 
 import LabNode from "./ui/LabNode.vue";
 import LabSocketAction from "./ui/LabSocketAction.vue";
@@ -18,31 +15,26 @@ import {
   ActionOutputSocket,
 } from "./socket";
 
-import { ref } from "vue";
+import { ref, watch } from "vue";
 import type { Ref } from "vue";
 
-import {
-  getNodes,
-  ActionPayload,
-} from "@/nodes";
+import { getRegisteredNodes, ActionPayload } from "@/nodes";
 
 import { EditorNode } from "./node";
+import { loadFromJson, saveToJson } from "./loader";
+
+import type { Schemes, AreaExtra } from "./types";
+import { createContextMenuMiddleware } from "./context-menu";
 
 export interface LabEditor {
   start: () => void;
   stop: () => void;
   destroy: () => void;
   addNode: (name: string) => void;
+  autoZoom: () => void;
   running: Ref<boolean>;
   editor: NodeEditor<Schemes>;
-  autoZoom: () => void;
 }
-
-type Schemes = GetSchemes<
-  ClassicPreset.Node,
-  ClassicPreset.Connection<ClassicPreset.Node, ClassicPreset.Node>
->;
-type AreaExtra = VueArea2D<Schemes>;
 
 const createLabRenderPreset = () => {
   return Presets.classic.setup({
@@ -133,8 +125,8 @@ const createLabConnectionPreset = (editor: NodeEditor<Schemes>) => {
 /**
  * When a connection is created or removed, update the connection map
  * @param editor Editor instance
- * @param data 
- * @param action 
+ * @param data
+ * @param action
  */
 const updateConnectionMap = (
   editor: NodeEditor<Schemes>,
@@ -156,8 +148,6 @@ const updateConnectionMap = (
   const sourceSocket = sourceNode.outputs[data.sourceOutput]?.socket;
   const targetSocket = targetNode.inputs[data.targetInput]?.socket;
 
-  console.log("updateConnectionMap", sourceSocket, targetSocket);
-
   if (action === "create") {
     // Get socket type
     if (sourceSocket instanceof DataOutputSocket) {
@@ -171,7 +161,6 @@ const updateConnectionMap = (
 
     if (sourceSocket instanceof ActionOutputSocket) {
       if (targetSocket instanceof ActionInputSocket) {
-        console.log("Setting action");
         sourceNode.setOutputActionFn(
           data.sourceOutput,
           `${targetNode.id}:${data.targetInput}`,
@@ -199,15 +188,16 @@ const updateConnectionMap = (
 };
 
 export const createEditor = async (
-  container: HTMLElement
+  container: HTMLElement,
+  content: Ref<string>
 ): Promise<LabEditor> => {
   const editor = new NodeEditor<Schemes>();
   const area = new AreaPlugin<Schemes, AreaExtra>(container);
   const connection = new ConnectionPlugin<Schemes, AreaExtra>();
   const render = new VueRenderPlugin<Schemes, AreaExtra>();
   const running = ref(false);
-
-  const nodes = getNodes();
+  const nodes = getRegisteredNodes();
+  const autoSerialize = ref(true);
 
   editor.addPipe((context) => {
     if (["connectioncreated", "connectionremoved"].includes(context.type)) {
@@ -232,34 +222,83 @@ export const createEditor = async (
     nodes.forEach((node) => node.hooks.onStop?.());
     running.value = false;
   };
+  let stopWatchContent = watch(content, () => deserializeJson());
+
+  const deserializeJson = async () => {
+    autoSerialize.value = false;
+    stop();
+    await editor.clear();
+    if (content.value === "") {
+      return;
+    }
+
+    const data = loadFromJson(content.value);
+
+    // load nodes
+    for (const node of data.nodes) {
+      const config = nodes.find((n) => n.name === node.name);
+      if (!config) {
+        return;
+      }
+      const editorNode = new EditorNode(config, area);
+      editorNode.id = node.id;
+      editorNode.setData(node.data);
+      await editor.addNode(editorNode);
+      await area.translate(node.id, {
+        x: node.position.x,
+        y: node.position.y,
+      });
+    }
+
+    // load connections
+    for (const connection of data.connections) {
+      const sourceNode = editor.getNode(connection.source.nodeId);
+      const targetNode = editor.getNode(connection.target.nodeId);
+
+      await editor.addConnection(
+        new ClassicPreset.Connection(
+          sourceNode,
+          connection.source.socketId,
+          targetNode,
+          connection.target.socketId
+        )
+      );
+    }
+
+    AreaExtensions.zoomAt(area, editor.getNodes());
+    autoSerialize.value = true;
+  };
+
+  const serializeJson = () => {
+    const nodes = editor.getNodes() as EditorNode[];
+    const connections = editor.getConnections();
+    stopWatchContent();
+    content.value = saveToJson({
+      nodes: nodes.map((node) => ({
+        id: node.id,
+        name: node.name,
+        position: area.nodeViews.get(node.id)?.position ?? { x: 0, y: 0 },
+        data: node.getData(),
+      })),
+      connections: connections.map((connection) => ({
+        source: {
+          nodeId: connection.source,
+          socketId: connection.sourceOutput,
+        },
+        target: {
+          nodeId: connection.target,
+          socketId: connection.targetInput,
+        },
+      })),
+    });
+    stopWatchContent = watch(content, () => deserializeJson());
+  };
 
   AreaExtensions.selectableNodes(area, AreaExtensions.selector(), {
     accumulating: AreaExtensions.accumulateOnCtrl(),
   });
 
   render.addPreset(createLabRenderPreset());
-
-  connection.addPreset(createLabConnectionPreset(editor));
-
-  editor.use(area);
-  area.use(connection);
-  area.use(render);
-
-  AreaExtensions.simpleNodesOrder(area);
-
-  // Add nodes
-  let loc_offset = 0;
-  nodes.forEach(async (config) => {
-    const node = new EditorNode(config, area);
-
-    await editor.addNode(node);
-
-    area.translate(node.id, {
-      x: loc_offset,
-      y: 0,
-    });
-    loc_offset += 240;
-  });
 
   const addNode = async (name: string) => {
     const config = nodes.find((node) => node.name === name);
@@ -268,17 +307,63 @@ export const createEditor = async (
     }
     const node = new EditorNode(config, area);
     await editor.addNode(node);
+
+    area.translate(node.id, {
+      x: area.area.pointer.x - 100,
+      y: area.area.pointer.y - 32,
+    });
   };
 
+  const createNodeByName = (name: string) => {
+    const config = nodes.find((node) => node.name === name);
+    if (!config) {
+      throw new Error(`Node ${name} not found`);
+    }
+    return new EditorNode(config, area);
+  };
+
+
+  render.addPreset(Presets.contextMenu.setup());
+
+  connection.addPreset(createLabConnectionPreset(editor));
+
+  editor.use(area);
+  area.use(connection);
+  area.use(render);
+
+  AreaExtensions.simpleNodesOrder(area);
   AreaExtensions.zoomAt(area, editor.getNodes());
+
+  const autoZoom = () => {
+    AreaExtensions.zoomAt(area, editor.getNodes());
+  };
+
+  area.addPipe((context) => {
+    if (["nodedragged", "noderemoved", "nodecreate"].includes(context.type) && autoSerialize.value) {
+      serializeJson();
+    }
+    return context;
+  });
+
+  area.addPipe(
+    createContextMenuMiddleware(
+      editor,
+      (name: string) => {
+        addNode(name);
+      },
+      (nodeId) => {
+        editor.removeNode(nodeId);
+      }
+    )
+  );
 
   return {
     destroy: () => area.destroy(),
     start,
     stop,
     addNode,
+    autoZoom,
     running,
     editor,
-    autoZoom: () => AreaExtensions.zoomAt(area, editor.getNodes()),
   };
 };

@@ -1,42 +1,83 @@
-import { ref } from "vue";
+import { ref, watch, nextTick } from "vue";
 import { Open, Save, SaveAs } from "@/../wailsjs/go/main/LabDocument";
 import { EventsOn } from "@/../wailsjs/runtime/runtime";
+import { ElMessageBox } from "element-plus";
+import type { Action } from "element-plus";
 
-const filePath = ref("");
+const filePath = ref("Untitled");
 const content = ref("");
 const isUntitled = ref(true);
+const isDirty = ref(false);
 
-EventsOn("document-opened", (data: string) => {
-  const parsedData = JSON.parse(data);
+watch(content, () => {
+  isDirty.value = true;
+});
+
+EventsOn("document-opened", (data: { content: string; path: string }) => {
   isUntitled.value = false;
-  filePath.value = parsedData.filePath;
-  content.value = parsedData.content;
+  filePath.value = data.path;
+  content.value = data.content;
+  nextTick(() => {
+    isDirty.value = false;
+  });
 });
 
 export const useDocument = () => {
+  const askSaveAndRun = async (callback: () => void | Promise<void>) => {
+    if (isDirty.value) {
+      ElMessageBox.confirm("你有未保存的修改，是否保存？", "修改未保存", {
+        distinguishCancelAndClose: true,
+        confirmButtonText: "保存",
+        cancelButtonText: "放弃修改",
+      })
+        .then(async () => {
+          await save();
+        })
+        .catch((action: Action) => {
+          if (action === "cancel") {
+            callback();
+          }
+        });
+    } else {
+      await callback();
+    }
+  };
   const open = async () => {
-    await Open();
+    askSaveAndRun(async () => {
+      await Open();
+    });
   };
 
-  const save = () => {
+  const save = async () => {
     if (isUntitled.value) {
-      SaveAs(content.value);
+      await SaveAs(content.value);
       return;
     }
-    Save(content.value);
+    await Save(content.value);
+    isDirty.value = false;
   };
 
-  const close = () => {
-    filePath.value = "Untitled";
-    content.value = "";
-    isUntitled.value = true;
+  const saveAs = async () => {
+    await SaveAs(content.value);
+    isDirty.value = false;
+  };
+
+  const close = async () => {
+    askSaveAndRun(async () => {
+      filePath.value = "Untitled";
+      content.value = "";
+      isUntitled.value = true;
+      isDirty.value = false;
+    });
   };
 
   return {
     open,
     save,
+    saveAs,
     close,
     filePath,
     content,
+    isDirty,
   };
 };

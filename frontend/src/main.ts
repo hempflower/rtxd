@@ -17,10 +17,15 @@ import zhCn from "element-plus/dist/locale/zh-cn.mjs";
 // @ts-ignore
 import VueClipboard from 'vue3-clipboard'
 
+import '@imengyu/vue3-context-menu/lib/vue3-context-menu.css'
+import ContextMenu from '@imengyu/vue3-context-menu'
+
 const app = createApp(App);
 app.use(route);
 app.use(ElementPlus, { locale: zhCn });
 app.use(VueClipboard,{})
+app.use(ContextMenu)
+
 for (const [key, component] of Object.entries(ElementPlusIconsVue)) {
   app.component(key, component);
 }

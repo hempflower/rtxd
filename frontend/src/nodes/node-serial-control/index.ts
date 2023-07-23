@@ -142,6 +142,7 @@ export default <LabNode>{
   label: "串口控制",
   description: "提供串口连接功能",
   vendor: "Evan Xiao",
+  category: "串口",
   inputs: [
     {
       name: "connect",

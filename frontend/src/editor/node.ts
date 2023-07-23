@@ -10,13 +10,7 @@ import {
   ActionInputSocket,
   ActionOutputSocket,
 } from "./socket";
-
-type Schemes = GetSchemes<
-  ClassicPreset.Node,
-  ClassicPreset.Connection<ClassicPreset.Node, ClassicPreset.Node>
->;
-
-type AreaExtra = VueArea2D<Schemes>;
+import type { Schemes, AreaExtra } from "./types";
 
 class CustomControl extends ClassicPreset.Control {
   constructor(
@@ -28,7 +22,7 @@ class CustomControl extends ClassicPreset.Control {
 }
 
 export class EditorNode extends ClassicPreset.Node {
-  private name: string;
+  public readonly name: string;
 
   private dataInputs = new Map<string, DataFn>();
   public readonly dataOutputs = new Map<string, DataFn>();
@@ -99,6 +93,9 @@ export class EditorNode extends ClassicPreset.Node {
           this.hooks.onMount(el);
         },
         () => {
+          console.log("unmount");
+          this.hooks.onStop?.()
+          this.hooks.onDestroy?.();
           this.hooks.onUnmount();
         }
       )
@@ -168,6 +165,14 @@ export class EditorNode extends ClassicPreset.Node {
       return;
     }
     this.dataInputs.set(name, data);
+  }
+
+  public setData(data: string) {
+    this.data = data;
+  }
+
+  public getData() {
+    return this.data;
   }
 
   public setOutputActionFn(name: string, id: string, action?: ActionFn | null) {

@@ -80,9 +80,10 @@ export const createNodeHooks = (context: LabNodeContext): LabNodeHooks => {
 
 export default <LabNode>{
   name: "node-text-buffer",
-  label: "字符流显示器",
+  label: "文本显示器",
   description: "记录并展示输入的字符数据",
   vendor: "Evan Xiao",
+  category: "文本",
   inputs: [
     {
       name: "data",

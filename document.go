@@ -55,11 +55,39 @@ func (d *LabDocument) Open() {
 }
 
 func (d *LabDocument) Save(content string) {
-
+	os.WriteFile(d.path, []byte(content), 0644)
 }
 
 func (d *LabDocument) SaveAs(content string) {
+	// Open file dialog lead user to select file.
+	docPath, err := runtime.SaveFileDialog(d.ctx, runtime.SaveDialogOptions{
+		Title: "Save File",
+		Filters: []runtime.FileFilter{
+			{
+				DisplayName: "Lab Nodes (*.lns)",
+				Pattern:     "*.lns",
+			},
+		},
+	})
 
+	if err != nil {
+		// Handle error
+		return
+	}
+
+	if docPath == "" {
+		// User cancelled
+		return
+	}
+
+	// If file extension is not .lns, append it.
+	if docPath[len(docPath)-4:] != ".lns" {
+		docPath += ".lns"
+	}
+
+	d.path = docPath
+	emitDocumentOpened(d.ctx, docPath, content)
+	d.Save(content)
 }
 
 func emitDocumentOpened(ctx context.Context, path string, content string) {

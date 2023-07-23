@@ -63,6 +63,7 @@ export default <LabNode>{
   label: "文本转二进制",
   description: "可以将文本数据转换为二进制数据",
   vendor: "Evan Xiao",
+  category: "文本",
   inputs: [
     {
       name: "input",

@@ -2,7 +2,7 @@ import { Quit } from "@/../wailsjs/runtime/runtime";
 import { useDocument } from "@/composables/doc";
 
 
-const { open, save, close } = useDocument();
+const { open, save,saveAs, close } = useDocument();
 
 const menuList = [
   {
@@ -11,29 +11,25 @@ const menuList = [
       {
         title: "新建",
         action: () => {
-          console.log("新建");
           close();
         },
       },
       {
         title: "打开",
         action: () => {
-          console.log("打开");
           open();
         },
       },
       {
         title: "保存",
         action: () => {
-          console.log("保存");
           save();
         },
       },
       {
         title: "另存为...",
         action: () => {
-          console.log("另存为");
-          save();
+          saveAs();
         },
       },
       {
