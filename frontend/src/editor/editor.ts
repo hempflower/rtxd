@@ -312,6 +312,8 @@ export const createEditor = async (
       x: area.area.pointer.x - 100,
       y: area.area.pointer.y - 32,
     });
+
+    return node;
   };
 
   const createNodeByName = (name: string) => {
@@ -348,8 +350,14 @@ export const createEditor = async (
   area.addPipe(
     createContextMenuMiddleware(
       editor,
-      (name: string) => {
-        addNode(name);
+      async (name: string) => {
+        const newNode = await addNode(name);
+
+        // If editor is running, start it
+        if (running.value) {
+          newNode?.hooks.onStart?.();
+        }
+
       },
       (nodeId) => {
         editor.removeNode(nodeId);
