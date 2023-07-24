@@ -33,8 +33,11 @@ export const createNodeHooks = (context: LabNodeContext): LabNodeHooks => {
       return;
     }
 
+    // 为了方便调试，将 \n 替换为 \r\n，比如 AT 指令
+    text = text.replaceAll("\n", "\r\n");
+
     context.invokeAction("output", {
-      data: appendLine.value ? text + "\n" : text,
+      data: appendLine.value ? text + "\r\n" : text,
       type: "string",
     });
   };

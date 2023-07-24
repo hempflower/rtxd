@@ -8,7 +8,7 @@ import {
 import mitt from "mitt";
 import { EventsOn } from "@/../wailsjs/runtime/runtime";
 
-import { Base64 } from 'js-base64';
+import { Base64 } from "js-base64";
 
 export interface SerialOptions {
   baudRate: number;
@@ -24,7 +24,7 @@ export interface ISerialPortClient {
   onReceive(callback: (data: ArrayBuffer) => void): void;
   onDisconnect(callback: () => void): void;
   onConnect(callback: (connectionId: number) => void): void;
-  destory(): void;
+  destroy(): void;
 }
 
 interface SerialEventPayload {
@@ -72,14 +72,14 @@ export const getSerialPorts = (): Promise<string[]> => {
 const ArrayBufferToNumberArray = (buffer: ArrayBuffer): Array<number> => {
   const view = new Uint8Array(buffer);
   return Array.from(view);
-}
+};
 
 export class WailsSerialClient implements ISerialPortClient {
   private path: string;
   private options: SerialOptions;
   private connectionId = -1;
 
-  private _onConnectCB: ((connectionId:number) => void) | null = null;
+  private _onConnectCB: ((connectionId: number) => void) | null = null;
   private _onDisconnectCB: (() => void) | null = null;
   private _onReceiveCB: ((data: ArrayBuffer) => void) | null = null;
 
@@ -89,22 +89,22 @@ export class WailsSerialClient implements ISerialPortClient {
         this._onConnectCB(this.connectionId);
       }
     }
-  }
+  };
 
   private _onDisconnect = (data: SerialEventPayload) => {
     if (this.connectionId !== -1 && this._onDisconnectCB) {
       if (data.connectionId === this.connectionId) {
         this._onDisconnectCB();
+        this.connectionId = -1;
       }
     }
-  }
+  };
 
   private _onReceive = (data: ArrayBuffer) => {
     if (this.connectionId !== -1 && this._onReceiveCB) {
       this._onReceiveCB(data);
     }
-  }
-
+  };
 
   constructor(path: string, options: SerialOptions) {
     this.path = path;
@@ -121,9 +121,9 @@ export class WailsSerialClient implements ISerialPortClient {
         this._onReceive(Base64.toUint8Array(data.data).buffer);
       }
     }
-  }
+  };
 
-  open(): Promise<void> {
+  async open(): Promise<void> {
     const parityMap = {
       none: 0,
       odd: 1,
@@ -132,32 +132,30 @@ export class WailsSerialClient implements ISerialPortClient {
       space: 4,
     };
 
-    return OpenSerialPort(
+    console.log(this.options);
+
+    const connectionId = await OpenSerialPort(
       this.path,
       this.options.baudRate,
       this.options.dataBits,
       parityMap[this.options.parity],
       this.options.stopBits
-    ).then((connectionId) => {
-      this.connectionId = connectionId;
-      if (this.connectionId !== -1 && this._onConnectCB) {
-        this._onConnectCB(this.connectionId);
-      }
-    });
+    );
+    this.connectionId = connectionId;
+    if (this.connectionId !== -1 && this._onConnectCB) {
+      this._onConnectCB(this.connectionId);
+    }
   }
-  close(): Promise<void> {
-    if(this.connectionId !== -1){
-      return CloseSerialPort(this.connectionId).then(() => {
-        this.connectionId = -1;
-        this._onDisconnectCB?.();
-      });
+  async close(): Promise<void> {
+    if (this.connectionId !== -1) {
+      await CloseSerialPort(this.connectionId);
     } else {
       return Promise.resolve();
     }
   }
   write(data: ArrayBuffer): Promise<void> {
-    if(this.connectionId !== -1){
-      return WriteSerialPort(this.connectionId, ArrayBufferToNumberArray(data))
+    if (this.connectionId !== -1) {
+      return WriteSerialPort(this.connectionId, ArrayBufferToNumberArray(data));
     } else {
       return Promise.resolve();
     }
@@ -168,10 +166,10 @@ export class WailsSerialClient implements ISerialPortClient {
   onDisconnect(callback: () => void): void {
     this._onDisconnectCB = callback;
   }
-  onConnect(callback: (connectionId:number) => void): void {
+  onConnect(callback: (connectionId: number) => void): void {
     this._onConnectCB = callback;
   }
-  destory(): void {
+  destroy(): void {
     serialEventBus.off(SERIAL_DATA_EVENT, this._serialDataCallback);
     serialEventBus.off(SERIAL_CONNECT_EVENT, this._onConnect);
     serialEventBus.off(SERIAL_DISCONNECT_EVENT, this._onDisconnect);

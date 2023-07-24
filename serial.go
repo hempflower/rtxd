@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"encoding/base64"
+	"fmt"
 	"time"
 
 	"github.com/wailsapp/wails/v2/pkg/runtime"
@@ -38,6 +39,7 @@ func (l *LabSerial) serialReader(connectionId int32) {
 				"connectionId": connectionId,
 			}
 			runtime.EventsEmit(l.context, "serial-disconnected", payload)
+			fmt.Println("Error:", err.Error())
 
 			return
 		}
@@ -112,11 +114,15 @@ func (l *LabSerial) OpenSerialPort(portName string, baudRate int, databits int, 
 
 func (l *LabSerial) CloseSerialPort(connectionId int32) {
 	port := *l.serialMap[connectionId].serial
+	port.ResetOutputBuffer()
+	port.ResetInputBuffer()
 	err := port.Close()
 
 	if err != nil {
 		println("Error:", err.Error())
 	}
+
+	println("Serial port closed")
 
 	// emit event to frontend
 	payload := map[string]int32{

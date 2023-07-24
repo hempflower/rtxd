@@ -47,9 +47,9 @@ export const createNodeHooks = (context: LabNodeContext): LabNodeHooks => {
       isConnect.value = true;
       connectionId.value = id;
 
-      context.invokeAction("onConnect",{
+      context.invokeAction("onConnect", {
         data: id,
-        type: "number"
+        type: "number",
       });
     });
 
@@ -59,15 +59,14 @@ export const createNodeHooks = (context: LabNodeContext): LabNodeHooks => {
       context.invokeAction("onDisconnect");
     });
 
-    serialClient.value.open()
-
+    serialClient.value.open();
   };
 
-  const onCloseSerial = () => {
+  const onCloseSerial = async () => {
     // stub
     if (serialClient.value) {
-      serialClient.value.close();
-      serialClient.value.destory();
+      await serialClient.value.close();
+      serialClient.value.destroy();
       serialClient.value = null;
     }
   };
@@ -76,8 +75,8 @@ export const createNodeHooks = (context: LabNodeContext): LabNodeHooks => {
     // stub
     context.invokeAction("onData", {
       data: data,
-      type: "bytes"
-      });
+      type: "bytes",
+    });
   };
 
   return {
@@ -111,15 +110,15 @@ export const createNodeHooks = (context: LabNodeContext): LabNodeHooks => {
         return {
           data: connectionId.value,
           type: "number",
-        }
+        };
       } else {
         return {
           data: isConnect.value,
           type: "boolean",
-        }
+        };
       }
     },
-    onAction: (name,data?: ActionPayload) => {
+    onAction: (name, data?: ActionPayload) => {
       if (name === "connect") {
         onOpenSerial();
       } else if (name === "disconnect") {
@@ -161,7 +160,7 @@ export default <LabNode>{
       label: "写数据",
       type: "action",
       dataType: ["bytes"],
-    }
+    },
   ],
   outputs: [
     {
@@ -180,7 +179,7 @@ export default <LabNode>{
       name: "onConnect",
       label: "连接",
       type: "action",
-      dataType: "number"
+      dataType: "number",
     },
     {
       name: "onDisconnect",
@@ -191,7 +190,7 @@ export default <LabNode>{
       name: "onData",
       label: "收到数据",
       type: "action",
-      dataType: "bytes"
+      dataType: "bytes",
     },
   ],
   hooks: (context) => createNodeHooks(context),
