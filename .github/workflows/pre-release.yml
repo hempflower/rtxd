@@ -27,6 +27,13 @@ jobs:
 
     - name: Check wails install
       run: wails doctor
+    - uses: actions/cache@v2
+      with:
+        path: |
+          ~/.cache/go-build
+          ~/go/pkg/mod
+          "./frontend/node_modules"
+        key: ${{ runner.os }}-node_modules-${{ hashFiles('**/package-lock.json') }}
 
     - name: Build Windows Release
       run: wails build -platform windows/amd64 -nsis
