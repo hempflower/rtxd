@@ -61,7 +61,7 @@ VIAddVersionKey "ProductName"     "${INFO_PRODUCTNAME}"
 
 !insertmacro MUI_UNPAGE_INSTFILES # Uinstalling page
 
-!insertmacro MUI_LANGUAGE "English" # Set the Language of the installer
+!insertmacro MUI_LANGUAGE "SimpChinese" # Set the Language of the installer
 
 ## The following two statements can be used to sign the installer and the uninstaller. The path to the binaries are provided in %1
 #!uninstfinalize 'signtool --file "%1"'
@@ -88,6 +88,14 @@ Section
     CreateShortcut "$SMPROGRAMS\${INFO_PRODUCTNAME}.lnk" "$INSTDIR\${PRODUCT_EXECUTABLE}"
     CreateShortCut "$DESKTOP\${INFO_PRODUCTNAME}.lnk" "$INSTDIR\${PRODUCT_EXECUTABLE}"
 
+    # Write file extension association
+    WriteRegStr HKCR ".lns" "" "Paramlab.LabNodes"
+    WriteRegStr HKCR "Paramlab.LabNodes" "" "ParamLab Nodes"   
+    WriteRegStr HKCR "Paramlab.LabNodes\DefaultIcon" "" "$INSTDIR\${PRODUCT_EXECUTABLE},0"      
+    WriteRegStr HKCR "Paramlab.LabNodes\shell" "" ""
+    WriteRegStr HKCR "Paramlab.LabNodes\shell\open" "" ""
+    WriteRegStr HKCR "Paramlab.LabNodes\shell\open\command" "" '"$INSTDIR\${PRODUCT_EXECUTABLE}" "%1"'
+
     !insertmacro wails.writeUninstaller
 SectionEnd
 
@@ -100,6 +108,14 @@ Section "uninstall"
 
     Delete "$SMPROGRAMS\${INFO_PRODUCTNAME}.lnk"
     Delete "$DESKTOP\${INFO_PRODUCTNAME}.lnk"
+
+    # Delete file extension association
+    DeleteRegKey HKCR "Paramlab.LabNodes\shell\open\command"
+    DeleteRegKey HKCR "Paramlab.LabNodes\shell\open"
+    DeleteRegKey HKCR "Paramlab.LabNodes\shell"
+    DeleteRegKey HKCR "Paramlab.LabNodes\DefaultIcon"
+    DeleteRegKey HKCR "Paramlab.LabNodes"
+    DeleteRegKey HKCR ".lns"
 
     !insertmacro wails.deleteUninstaller
 SectionEnd
