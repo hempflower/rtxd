@@ -24,7 +24,7 @@ export const keyMaps: KeyMap[] = [
         action:() => open()
     },
     {
-        key: "ctrl+w",
+        key: "ctrl+n",
         action:() => close()
     },
 ]
