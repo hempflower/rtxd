@@ -4,7 +4,7 @@
 name: Pre-Release
 
 on:
-  pull_request:
+  push:
     branches: [ "pre-release" ]
   workflow_dispatch:
 
@@ -30,3 +30,9 @@ jobs:
 
     - name: Build Windows Release
       run: wails build -platform windows/amd64 -nsis
+
+    - name: Upload Release
+      uses: ncipollo/release-action@v1
+      with:
+        artifacts: "./build/bin/*.exe"
+        prerelease: true
