@@ -2,8 +2,11 @@ import { NodeEditor, ClassicPreset } from "rete";
 import { AreaPlugin, AreaExtensions } from "rete-area-plugin";
 import { ClassicFlow, ConnectionPlugin } from "rete-connection-plugin";
 import { VueRenderPlugin, Presets } from "rete-vue-render-plugin";
+import { HistoryPlugin, HistoryActions } from "rete-history-plugin";
+import { Presets as HistoryPresets } from "rete-history-plugin";
+import { HistoryExtensions } from "rete-history-plugin";
 
-import LabNode from "./ui/LabNode.vue";
+import LabNodeVue from "./ui/LabNode.vue";
 import LabSocketAction from "./ui/LabSocketAction.vue";
 import LabSocketData from "./ui/LabSocketData.vue";
 import LabNodeBody from "./ui/LabNodeBody.vue";
@@ -26,21 +29,11 @@ import { loadFromJson, saveToJson } from "./loader";
 import type { Schemes, AreaExtra } from "./types";
 import { createContextMenuMiddleware } from "./context-menu";
 
-export interface LabEditor {
-  start: () => void;
-  stop: () => void;
-  destroy: () => void;
-  addNode: (name: string) => void;
-  autoZoom: () => void;
-  running: Ref<boolean>;
-  editor: NodeEditor<Schemes>;
-}
-
 const createLabRenderPreset = () => {
   return Presets.classic.setup({
     customize: {
       node: () => {
-        return LabNode;
+        return LabNodeVue;
       },
       socket: (data) => {
         if (
@@ -187,64 +180,118 @@ const updateConnectionMap = (
   }
 };
 
-export const createEditor = async (
-  container: HTMLElement,
-  content: Ref<string>
-): Promise<LabEditor> => {
-  const editor = new NodeEditor<Schemes>();
-  const area = new AreaPlugin<Schemes, AreaExtra>(container);
-  const connection = new ConnectionPlugin<Schemes, AreaExtra>();
-  const render = new VueRenderPlugin<Schemes, AreaExtra>();
-  const running = ref(false);
-  const nodes = getRegisteredNodes();
-  const autoSerialize = ref(true);
+export class LabEditor {
+  private editor: NodeEditor<Schemes>;
+  private area: AreaPlugin<Schemes, AreaExtra>;
+  private connection: ConnectionPlugin<Schemes, AreaExtra>;
+  private render: VueRenderPlugin<Schemes, AreaExtra>;
+  private history: HistoryPlugin<Schemes, HistoryActions<Schemes>>;
+  private nodes = getRegisteredNodes();
+  private autoSerialize = ref(true);
+  private running = ref(false);
+  private stopWatchContent: () => void;
 
-  editor.addPipe((context) => {
-    if (["connectioncreated", "connectionremoved"].includes(context.type)) {
-      updateConnectionMap(
-        editor,
-        // @ts-ignore
-        context.data,
-        context.type === "connectioncreated" ? "create" : "remove"
-      );
-    }
-    return context;
-  });
+  constructor(container: HTMLElement, private content: Ref<string>) {
+    this.editor = new NodeEditor<Schemes>();
+    this.area = new AreaPlugin<Schemes, AreaExtra>(container);
+    this.connection = new ConnectionPlugin<Schemes, AreaExtra>();
+    this.render = new VueRenderPlugin<Schemes, AreaExtra>();
+    this.history = new HistoryPlugin<Schemes, HistoryActions<Schemes>>();
 
-  const start = () => {
-    const nodes = editor.getNodes() as EditorNode[];
-    nodes.forEach((node) => node.hooks.onStart?.());
-    running.value = true;
-  };
+    this.render.addPreset(createLabRenderPreset());
+    this.connection.addPreset(createLabConnectionPreset(this.editor));
 
-  const stop = () => {
-    const nodes = editor.getNodes() as EditorNode[];
-    nodes.forEach((node) => node.hooks.onStop?.());
-    running.value = false;
-  };
-  let stopWatchContent = watch(content, () => deserializeJson());
+    this.editor.addPipe((context) => {
+      if (["connectioncreated", "connectionremoved"].includes(context.type)) {
+        updateConnectionMap(
+          this.editor,
+          // @ts-ignore
+          context.data,
+          context.type === "connectioncreated" ? "create" : "remove"
+        );
+      }
+      return context;
+    });
 
-  const deserializeJson = async () => {
-    autoSerialize.value = false;
-    stop();
-    await editor.clear();
-    if (content.value === "") {
+    this.area.addPipe((context) => {
+      if (
+        ["nodedragged", "noderemoved", "nodecreate"].includes(context.type) &&
+        this.autoSerialize.value
+      ) {
+        this.serializeJson();
+      }
+      return context;
+    });
+
+    this.area.addPipe(
+      createContextMenuMiddleware(
+        this.editor,
+        async (name: string) => {
+          this.addNode(name);
+        },
+        (nodeId) => {
+          this.removeNode(nodeId);
+        }
+      )
+    );
+
+    this.editor.addPipe((context) => {
+      if(context.type === 'noderemoved'){
+        (context.data as EditorNode).destroy();
+      }
+      return context
+    })
+
+    this.stopWatchContent = watch(this.content, () => this.deserializeJson());
+
+    this.editor.use(this.area);
+    this.area.use(this.connection);
+    this.area.use(this.render);
+    this.area.use(this.history);
+    this.history.addPreset(HistoryPresets.classic.setup());
+    HistoryExtensions.keyboard(this.history);
+    AreaExtensions.simpleNodesOrder(this.area);
+    AreaExtensions.zoomAt(this.area, this.editor.getNodes());
+    const selector = AreaExtensions.selector();
+    const accumulating = AreaExtensions.accumulateOnCtrl();
+    AreaExtensions.selectableNodes(this.area, selector, {
+      accumulating,
+    });
+
+    this.autoZoom();
+  }
+
+  private removeNode(nodeId: string) {
+    // call node hooks
+    const node = this.editor.getNode(nodeId) as EditorNode;
+    node.destroy();
+
+    this.editor.removeNode(nodeId);
+  }
+
+  private async deserializeJson() {
+    this.autoSerialize.value = false;
+    this.stop();
+    await this.editor.clear();
+    if (this.content.value === "") {
       return;
     }
+    // Stop editor
+    this.stop();
 
-    const data = loadFromJson(content.value);
+    const data = loadFromJson(this.content.value);
 
     // load nodes
     for (const node of data.nodes) {
-      const config = nodes.find((n) => n.name === node.name);
+      const config = this.nodes.find((n) => n.name === node.name);
       if (!config) {
         return;
       }
-      const editorNode = new EditorNode(config, area);
+      const editorNode = new EditorNode(config, this.area);
       editorNode.id = node.id;
       editorNode.setData(node.data);
-      await editor.addNode(editorNode);
-      await area.translate(node.id, {
+      await this.editor.addNode(editorNode);
+      await this.area.translate(node.id, {
         x: node.position.x,
         y: node.position.y,
       });
@@ -252,10 +299,10 @@ export const createEditor = async (
 
     // load connections
     for (const connection of data.connections) {
-      const sourceNode = editor.getNode(connection.source.nodeId);
-      const targetNode = editor.getNode(connection.target.nodeId);
+      const sourceNode = this.editor.getNode(connection.source.nodeId);
+      const targetNode = this.editor.getNode(connection.target.nodeId);
 
-      await editor.addConnection(
+      await this.editor.addConnection(
         new ClassicPreset.Connection(
           sourceNode,
           connection.source.socketId,
@@ -265,19 +312,19 @@ export const createEditor = async (
       );
     }
 
-    AreaExtensions.zoomAt(area, editor.getNodes());
-    autoSerialize.value = true;
-  };
+    AreaExtensions.zoomAt(this.area, this.editor.getNodes());
+    this.autoSerialize.value = true;
+  }
 
-  const serializeJson = () => {
-    const nodes = editor.getNodes() as EditorNode[];
-    const connections = editor.getConnections();
-    stopWatchContent();
-    content.value = saveToJson({
+  private serializeJson() {
+    const nodes = this.editor.getNodes() as EditorNode[];
+    const connections = this.editor.getConnections();
+    this.stopWatchContent();
+    this.content.value = saveToJson({
       nodes: nodes.map((node) => ({
         id: node.id,
         name: node.name,
-        position: area.nodeViews.get(node.id)?.position ?? { x: 0, y: 0 },
+        position: this.area.nodeViews.get(node.id)?.position ?? { x: 0, y: 0 },
         data: node.getData(),
       })),
       connections: connections.map((connection) => ({
@@ -291,87 +338,82 @@ export const createEditor = async (
         },
       })),
     });
-    stopWatchContent = watch(content, () => deserializeJson());
-  };
+    this.stopWatchContent = watch(this.content, () => this.deserializeJson());
+  }
 
-  AreaExtensions.selectableNodes(area, AreaExtensions.selector(), {
-    accumulating: AreaExtensions.accumulateOnCtrl(),
-  });
+  public autoZoom() {
+    AreaExtensions.zoomAt(this.area, this.editor.getNodes());
+  }
 
-  render.addPreset(createLabRenderPreset());
-
-  const addNode = async (name: string) => {
-    const config = nodes.find((node) => node.name === name);
+  public async addNode(name: string) {
+    const config = this.nodes.find((node) => node.name === name);
     if (!config) {
       return;
     }
-    const node = new EditorNode(config, area);
-    await editor.addNode(node);
+    const node = new EditorNode(config, this.area);
+    await this.editor.addNode(node);
 
-    area.translate(node.id, {
-      x: area.area.pointer.x - 100,
-      y: area.area.pointer.y - 32,
+    this.area.translate(node.id, {
+      x: this.area.area.pointer.x - 100,
+      y: this.area.area.pointer.y - 32,
     });
 
+    if (this.running.value) {
+      node?.hooks.onStart?.();
+    }
+
     return node;
-  };
+  }
 
-  const createNodeByName = (name: string) => {
-    const config = nodes.find((node) => node.name === name);
-    if (!config) {
-      throw new Error(`Node ${name} not found`);
-    }
-    return new EditorNode(config, area);
-  };
+  public start() {
+    const nodes = this.editor.getNodes() as EditorNode[];
+    nodes.forEach((node) => node.hooks.onStart?.());
+    this.running.value = true;
+  }
 
+  public stop() {
+    const nodes = this.editor.getNodes() as EditorNode[];
+    nodes.forEach((node) => node.hooks.onStop?.());
+    this.running.value = false;
+  }
 
-  render.addPreset(Presets.contextMenu.setup());
+  public destroy() {
+    this.area.destroy();
+  }
 
-  connection.addPreset(createLabConnectionPreset(editor));
+  public undo() {
+    this.history.undo();
+  }
 
-  editor.use(area);
-  area.use(connection);
-  area.use(render);
+  public redo() {
+    this.history.redo();
+  }
 
-  AreaExtensions.simpleNodesOrder(area);
-  AreaExtensions.zoomAt(area, editor.getNodes());
+  public removeSelectedNodes() {
+    const selectedNodes = this.editor
+      .getNodes()
+      .filter((node) => node.selected);
+    selectedNodes.forEach((node) => this.editor.removeNode(node.id));
+  }
 
-  const autoZoom = () => {
-    AreaExtensions.zoomAt(area, editor.getNodes());
-  };
+  public cloneSelectedNodes() {
+    const selectedNodes = this.editor
+      .getNodes()
+      .filter((node) => node.selected) as EditorNode[];
+    selectedNodes.forEach((node) => {
+      this.addNode(node.name);
+    });
+  }
 
-  area.addPipe((context) => {
-    if (["nodedragged", "noderemoved", "nodecreate"].includes(context.type) && autoSerialize.value) {
-      serializeJson();
-    }
-    return context;
-  });
+  get isRunning() {
+    return this.running;
+  }
 
-  area.addPipe(
-    createContextMenuMiddleware(
-      editor,
-      async (name: string) => {
-        const newNode = await addNode(name);
+  get reteEditor() {
+    return this.editor;
+  }
 
-        // If editor is running, start it
-        if (running.value) {
-          newNode?.hooks.onStart?.();
-        }
-
-      },
-      (nodeId) => {
-        editor.removeNode(nodeId);
-      }
-    )
-  );
-
-  return {
-    destroy: () => area.destroy(),
-    start,
-    stop,
-    addNode,
-    autoZoom,
-    running,
-    editor,
-  };
-};
+  get reteArea() {
+    return this.area;
+  }
+}

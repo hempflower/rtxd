@@ -7,13 +7,15 @@ import { ref } from "vue";
 export const createNodeConstNumberHooks = (
   context: LabNodeContext
 ): LabNodeHooks => {
-  const { onMount, onUnmount, app } = createHooksFromVue(LabNodeConstNumber);
+  const { onMount, onUnmount, getApp } = createHooksFromVue(LabNodeConstNumber);
+  const app = getApp();
   app.use(ElementPlus);
 
   const value = ref(0);
 
   return {
     onCreated: () => {
+      const app = getApp();
       app.provide("readInput", (name: string) => {
         return context.readInput(name);
       });

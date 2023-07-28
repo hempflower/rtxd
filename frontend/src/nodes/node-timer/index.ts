@@ -7,8 +7,8 @@ import { ref } from "vue";
 export const createNodeTimerHooks = (context: LabNodeContext): LabNodeHooks => {
   const timeout = ref(1000);
   const timer = ref(0);
-  const { onMount, onUnmount, app } = createHooksFromVue(LabNodeTimer);
-  app.use(ElementPlus);
+  const { onMount, onUnmount, getApp } = createHooksFromVue(LabNodeTimer);
+  getApp().use(ElementPlus);
 
   const startTimer = () => {
     if (timer.value) {
@@ -29,15 +29,15 @@ export const createNodeTimerHooks = (context: LabNodeContext): LabNodeHooks => {
 
   return {
     onCreated: () => {
-      app.provide("readInput", (name: string) => {
+      getApp().provide("readInput", (name: string) => {
         return context.readInput(name);
       });
 
-      app.provide("invokeAction", (name: string) => {
+      getApp().provide("invokeAction", (name: string) => {
         context.invokeAction(name);
       });
 
-      app.provide("updateTimeout", (time: number) => {
+      getApp().provide("updateTimeout", (time: number) => {
         timeout.value = time;
 
         // if timer is running, restart it
@@ -47,7 +47,7 @@ export const createNodeTimerHooks = (context: LabNodeContext): LabNodeHooks => {
         }
       });
 
-      app.provide("timeout", timeout);
+      getApp().provide("timeout", timeout);
     },
     onStart: () => {
       //

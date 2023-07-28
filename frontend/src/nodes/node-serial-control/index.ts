@@ -9,8 +9,8 @@ import { createSerialPortClient } from "@/serial";
 import type { ISerialPortClient } from "@/serial";
 
 export const createNodeHooks = (context: LabNodeContext): LabNodeHooks => {
-  const { onMount, onUnmount, app } = createHooksFromVue(LabNodeDebug);
-  app.use(ElementPlus);
+  const { onMount, onUnmount, getApp } = createHooksFromVue(LabNodeDebug);
+  getApp().use(ElementPlus);
 
   const runnning = ref(false);
   const isConnect = ref(false);
@@ -81,6 +81,7 @@ export const createNodeHooks = (context: LabNodeContext): LabNodeHooks => {
 
   return {
     onCreated: () => {
+      const app = getApp();
       app.provide("readInput", (name: string) => {
         return context.readInput(name);
       });

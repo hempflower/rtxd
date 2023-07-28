@@ -6,16 +6,16 @@ import ElementPlus from "element-plus";
 import { ref } from "vue";
 
 export const createNodeHooks = (context: LabNodeContext): LabNodeHooks => {
-  const { onMount, onUnmount, app } = createHooksFromVue(LadNodeView);
-  app.use(ElementPlus);
+  const { onMount, onUnmount, getApp } = createHooksFromVue(LadNodeView);
+  getApp().use(ElementPlus);
 
   return {
     onCreated: () => {
-      app.provide("readInput", (name: string) => {
+      getApp().provide("readInput", (name: string) => {
         return context.readInput(name);
       });
 
-      app.provide("invokeAction", (name: string) => {
+      getApp().provide("invokeAction", (name: string) => {
         context.invokeAction(name);
       });
     },

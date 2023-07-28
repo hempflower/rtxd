@@ -83,12 +83,13 @@ export const createHooksFromVue = (
     app.mount(element);
   };
   const unmount = () => {
+    console.log("Unmount")
     app.unmount();
   };
   return {
-    onMount: mount,
-    onUnmount: unmount,
-    app,
+    onMount: (el:HTMLElement) => mount(el),
+    onUnmount: () => unmount(),
+    getApp: () => app,
   };
 };
 

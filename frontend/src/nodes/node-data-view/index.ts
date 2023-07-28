@@ -7,7 +7,7 @@ import { ref } from "vue";
 export const createNodeDataViewHooks = (
   context: LabNodeContext
 ): LabNodeHooks => {
-  const { onMount, onUnmount, app } = createHooksFromVue(LabNodeDataView);
+  const { onMount, onUnmount, getApp } = createHooksFromVue(LabNodeDataView);
 
   const dataText = ref("null");
   let timer: number | null = null;
@@ -54,6 +54,7 @@ export const createNodeDataViewHooks = (
 
   return {
     onCreated: () => {
+      const app = getApp();
       app.provide("readInput", (name: string) => {
         return context.readInput(name);
       });

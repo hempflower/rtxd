@@ -1,8 +1,7 @@
-import { ClassicPreset, GetSchemes } from "rete";
-import type { ActionFn, DataFn, DataPayload, ActionPayload } from "./types";
+import { ClassicPreset } from "rete";
+import type { ActionFn, DataFn, ActionPayload } from "./types";
 import type { LabNode, LabNodeHooks } from "@/nodes";
 import { AreaPlugin } from "rete-area-plugin";
-import { VueArea2D } from "rete-vue-render-plugin";
 
 import {
   DataInputSocket,
@@ -30,7 +29,7 @@ export class EditorNode extends ClassicPreset.Node {
   public readonly actionInputs = new Map<string, ActionFn>();
   private actionOutputs = new Map<string, Map<string, ActionFn>>();
 
-  public readonly hooks: LabNodeHooks;
+  private _hooks: LabNodeHooks | null = null;
 
   private area: AreaPlugin<Schemes, AreaExtra>;
 
@@ -47,17 +46,6 @@ export class EditorNode extends ClassicPreset.Node {
     this.area = area;
     this.config = config;
     this.data = data ?? "";
-
-    this.hooks = config.hooks({
-      readInput: (name: string) => this.readInput(name),
-      invokeAction: (name: string, data?: ActionPayload) =>
-        this.invokeAction(name, data),
-      updateNode: () => this.updateNodeStatus(),
-      loadData: () => this.data,
-      saveData: (data: string) => {
-        this.data = data;
-      },
-    });
 
     this.config.outputs
       .filter((v) => v.type === "data")
@@ -81,8 +69,24 @@ export class EditorNode extends ClassicPreset.Node {
       });
     this.addHTMLElementBody();
     this.addSockets();
+  }
 
-    this.hooks.onCreated?.();
+  get hooks() {
+    if(!this._hooks){
+      this._hooks = this.config.hooks({
+        readInput: (name: string) => this.readInput(name),
+        invokeAction: (name: string, data?: ActionPayload) =>
+          this.invokeAction(name, data),
+        updateNode: () => this.updateNodeStatus(),
+        loadData: () => this.data,
+        saveData: (data: string) => {
+          this.data = data;
+        },
+      });
+      this._hooks.onCreated?.();
+    }
+
+    return this._hooks;
   }
 
   private addHTMLElementBody() {
@@ -185,5 +189,11 @@ export class EditorNode extends ClassicPreset.Node {
 
   public removeOutputActionFn(name: string, id: string) {
     this.actionOutputs.get(name)?.delete(id);
+  }
+
+  public destroy() {
+    this.hooks.onUnmount();
+    // If use undo redo, this class will be reused
+    this._hooks = null
   }
 }

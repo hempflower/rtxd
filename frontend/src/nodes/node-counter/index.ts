@@ -9,10 +9,11 @@ export const createNodeCounterHooks = (
 ): LabNodeHooks => {
   const count = ref(0);
 
-  const { onMount, onUnmount, app } = createHooksFromVue(LabNodeCounter);
+  const { onMount, onUnmount, getApp } = createHooksFromVue(LabNodeCounter);
 
   return {
     onCreated: () => {
+      const app = getApp();
       app.provide("readInput", (name: string) => {
         return context.readInput(name);
       });

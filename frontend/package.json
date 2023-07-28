@@ -20,6 +20,7 @@
     "rete-area-plugin": "^2.0.0-beta.12",
     "rete-connection-plugin": "^2.0.0-beta.16",
     "rete-context-menu-plugin": "^2.0.0",
+    "rete-history-plugin": "^2.0.0",
     "rete-render-utils": "^2.0.0-beta.12",
     "rete-vue-render-plugin": "^2.0.0-beta.22",
     "vue": "^3.2.37",

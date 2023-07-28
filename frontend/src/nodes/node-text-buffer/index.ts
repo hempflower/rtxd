@@ -6,29 +6,29 @@ import ElementPlus from "element-plus";
 import { ref } from "vue";
 
 export const createNodeHooks = (context: LabNodeContext): LabNodeHooks => {
-  const { onMount, onUnmount, app } = createHooksFromVue(LadNodeView);
+  const { onMount, onUnmount, getApp } = createHooksFromVue(LadNodeView);
 
-  app.use(ElementPlus);
+  getApp().use(ElementPlus);
 
   const textBuffer = ref("");
   const scrollNotify = ref(false);
 
   return {
     onCreated: () => {
-      app.provide("readInput", (name: string) => {
+      getApp().provide("readInput", (name: string) => {
         return context.readInput(name);
       });
 
-      app.provide("invokeAction", (name: string) => {
+      getApp().provide("invokeAction", (name: string) => {
         context.invokeAction(name);
       });
 
-      app.provide("updateNode", () => {
+      getApp().provide("updateNode", () => {
         context.updateNode();
       });
 
-      app.provide("textBuffer", textBuffer);
-      app.provide("scrollNotify", scrollNotify);
+      getApp().provide("textBuffer", textBuffer);
+      getApp().provide("scrollNotify", scrollNotify);
 
     },
     onStart: () => {

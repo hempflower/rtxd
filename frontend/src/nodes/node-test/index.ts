@@ -5,7 +5,7 @@ import LabNodeDebug from "./node-view.vue";
 import { ref } from "vue";
 
 export const createNodeTestHooks = (context: LabNodeContext): LabNodeHooks => {
-  const { onMount, onUnmount, app } = createHooksFromVue(LabNodeDebug);
+  const { onMount, onUnmount, getApp } = createHooksFromVue(LabNodeDebug);
 
   const sendBytes = () => {
     // string 'abcdefghijklmnopqrstuvwxyz'
@@ -23,11 +23,11 @@ export const createNodeTestHooks = (context: LabNodeContext): LabNodeHooks => {
 
   return {
     onCreated: () => {
-      app.provide("readInput", (name: string) => {
+      getApp().provide("readInput", (name: string) => {
         return context.readInput(name);
       });
 
-      app.provide("invokeAction", (name: string) => {
+      getApp().provide("invokeAction", (name: string) => {
         context.invokeAction(name);
       });
     },

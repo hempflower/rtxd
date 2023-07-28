@@ -1,8 +1,14 @@
 import { Quit } from "@/../wailsjs/runtime/runtime";
 import { useDocument } from "@/composables/doc";
+import { useEditAction } from "@/composables/edit-action";
 
-
-const { open, save,saveAs, close } = useDocument();
+const { open, save, saveAs, close } = useDocument();
+const {
+  undoFn,
+  redoFn,
+  deleteFn,
+  cloneFn,
+} = useEditAction();
 
 const menuList = [
   {
@@ -55,40 +61,28 @@ const menuList = [
       {
         title: "撤销",
         action: () => {
-          console.log("撤销");
+          undoFn.value?.();
         },
       },
       {
         title: "重做",
         action: () => {
-          console.log("重做");
+          redoFn.value?.();
         },
       },
       {
         title: "---",
       },
       {
-        title: "剪切",
-        action: () => {
-          console.log("剪切");
-        },
-      },
-      {
-        title: "复制",
-        action: () => {
-          console.log("复制");
-        },
-      },
-      {
-        title: "粘贴",
-        action: () => {
-          console.log("粘贴");
-        },
-      },
-      {
         title: "删除",
         action: () => {
-          console.log("删除");
+          deleteFn.value?.();
+        },
+      },
+      {
+        title: "克隆",
+        action: () => {
+          cloneFn.value?.();
         },
       },
     ],

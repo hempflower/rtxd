@@ -49,12 +49,10 @@
 </template>
 <script setup lang="ts">
 import { ref, watch, onMounted, onBeforeUnmount } from "vue";
-import { LabEditor, createEditor } from "@/editor/editor";
-
+import { LabEditor } from "@/editor/editor";
 import { useDocument } from "@/composables/doc";
-
+import { useEditAction } from "@/composables/edit-action";
 import EditorBackground from "@/editor/EditorBackground.vue";
-
 import { FullScreen, VideoPause, VideoPlay } from "@element-plus/icons-vue";
 
 const editorContainer = ref<HTMLElement | null>(null);
@@ -65,12 +63,18 @@ const zooming = ref(false);
 const running = ref(false);
 
 const { content } = useDocument();
+const { undoFn, redoFn, deleteFn, cloneFn } = useEditAction();
 
 const createEditorInstance = async () => {
   const container = editorContainer.value as HTMLElement;
-  editorInstance = await createEditor(container, content);
+  editorInstance = new LabEditor(container, content);
 
-  watch(editorInstance.running, (val) => {
+  undoFn.value = () => editorInstance?.undo();
+  redoFn.value = () => editorInstance?.redo();
+  deleteFn.value = () => editorInstance?.removeSelectedNodes();
+  cloneFn.value = () => editorInstance?.cloneSelectedNodes();
+
+  watch(editorInstance.isRunning, (val) => {
     running.value = val;
   });
 };
@@ -81,6 +85,12 @@ onMounted(async () => {
 
 onBeforeUnmount(() => {
   editorInstance?.destroy();
+
+  editorInstance = null;
+  undoFn.value = null;
+  redoFn.value = null;
+  deleteFn.value = null;
+  cloneFn.value = null;
 });
 
 const autoZoom = () => {

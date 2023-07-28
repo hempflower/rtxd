@@ -6,9 +6,9 @@ import ElementPlus from "element-plus";
 import { ref } from "vue";
 
 export const createNodeHooks = (context: LabNodeContext): LabNodeHooks => {
-  const { onMount, onUnmount, app } = createHooksFromVue(LadNodeView);
+  const { onMount, onUnmount, getApp } = createHooksFromVue(LadNodeView);
 
-  app.use(ElementPlus);
+  getApp().use(ElementPlus);
 
   const inputText = ref<string>("");
   const running = ref<boolean>(false);
@@ -48,19 +48,19 @@ export const createNodeHooks = (context: LabNodeContext): LabNodeHooks => {
 
   return {
     onCreated: () => {
-      app.provide("readInput", (name: string) => {
+      getApp().provide("readInput", (name: string) => {
         return context.readInput(name);
       });
 
-      app.provide("invokeAction", (name: string) => {
+      getApp().provide("invokeAction", (name: string) => {
         context.invokeAction(name);
       });
 
-      app.provide("inputText", inputText);
-      app.provide("sendText", sendText);
-      app.provide("updateNodeConnection", updateNodeConnection);
-      app.provide("running", running);
-      app.provide("appendLine", appendLine);
+      getApp().provide("inputText", inputText);
+      getApp().provide("sendText", sendText);
+      getApp().provide("updateNodeConnection", updateNodeConnection);
+      getApp().provide("running", running);
+      getApp().provide("appendLine", appendLine);
     },
     onStart: () => {
       //
