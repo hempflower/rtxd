@@ -9,7 +9,6 @@ on:
   workflow_dispatch:
 
 jobs:
-
   build:
     runs-on: windows-latest
     steps:
@@ -23,13 +22,6 @@ jobs:
       uses: actions/setup-node@v3
       with:
         node-version: 16
-    - name: Install UPX
-      uses: crazy-max/ghaction-upx@v2
-      with:
-        install-only: true
-    - name: UPX version
-      run: upx --version
-
     - name: Set up wails
       run: go install github.com/wailsapp/wails/v2/cmd/wails@latest
 
@@ -37,4 +29,4 @@ jobs:
       run: wails doctor
 
     - name: Build Windows Release
-      run: wails build -p windows
+      run: wails build -platform windows/amd64 -nsis
