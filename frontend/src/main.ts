@@ -20,6 +20,9 @@ import VueClipboard from 'vue3-clipboard'
 import '@imengyu/vue3-context-menu/lib/vue3-context-menu.css'
 import ContextMenu from '@imengyu/vue3-context-menu'
 
+// KeyMap
+import { registerKeyMaps } from "@/key-map";
+
 const app = createApp(App);
 app.use(route);
 app.use(ElementPlus, { locale: zhCn });
@@ -43,4 +46,5 @@ app.config.errorHandler = (err) => {
   });
 };
 
+registerKeyMaps();
 app.mount("#app");
