@@ -26,8 +26,8 @@ func main() {
 		Title:     "Param Lab",
 		Width:     1024,
 		Height:    768,
-		MinWidth:  1024,
-		MinHeight: 768,
+		MinWidth:  300,
+		MinHeight: 200,
 		AssetServer: &assetserver.Options{
 			Assets: assets,
 		},
