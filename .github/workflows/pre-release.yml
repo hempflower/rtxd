@@ -1,0 +1,39 @@
+# This workflow will build a golang project
+# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-go
+
+name: Pre-Release
+
+on:
+  pull_request:
+    branches: [ "pre-release" ]
+
+jobs:
+
+  build:
+    runs-on: windows-latest
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: '1.20'
+    - name: Set up node v16
+      uses: actions/setup-node@v3
+      with:
+        node-version: 16
+    - name: Install UPX
+      uses: crazy-max/ghaction-upx@v2
+      with:
+        install-only: true
+    - name: UPX version
+      run: upx --version
+
+    - name: Set up wails
+      run: go install github.com/wailsapp/wails/v2/cmd/wails@latest
+
+    - name: Check wails install
+      run: wails doctor
+      
+    - name: Build Windows Release
+      run: wails build -p windows
