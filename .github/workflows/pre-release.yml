@@ -6,6 +6,7 @@ name: Pre-Release
 on:
   pull_request:
     branches: [ "pre-release" ]
+  workflow_dispatch:
 
 jobs:
 
@@ -34,6 +35,6 @@ jobs:
 
     - name: Check wails install
       run: wails doctor
-      
+
     - name: Build Windows Release
       run: wails build -p windows
