@@ -1,9 +1,9 @@
 <template>
   <router-view></router-view>  
-  <DevWatermark v-if="isDev" />
+  <dev-watermark v-if="isDev" />
 </template>
 <script setup lang="ts"> 
-import DevWatermark from './components/DevWatermark.vue';
+import DevWatermark from './components/dev-watermark.vue';
 import { ref } from 'vue';
 import { useTitle } from './composables/title';
 

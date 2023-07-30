@@ -1,9 +1,9 @@
 <template>
     <div class="full-height-container">
-        <MenuBar :menu="menuList"></MenuBar>
+        <menu-bar :menu="menuList"></menu-bar>
         <div class="workspace-container">
             <div class="full-height-container">
-                <WorkArea></WorkArea>
+                <work-area></work-area>
             </div>
         </div>
     </div>
@@ -11,8 +11,8 @@
 
 <script lang="ts" setup>
 // Components
-import MenuBar from '@/components/MenuBar.vue'
-import WorkArea from '@/components/WorkArea.vue';
+import MenuBar from '@/components/menu-bar.vue'
+import WorkArea from '@/components/work-area.vue';
 
 // Composables
 import useMenu from '@/composables/menu';

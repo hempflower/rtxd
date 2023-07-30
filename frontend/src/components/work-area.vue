@@ -1,10 +1,10 @@
 <template>
   <div ref="workarea" class="lab-workarea">
-    <LabEditor class="full-height"></LabEditor>
+    <lab-editor class="full-height"></lab-editor>
   </div>
 </template>
 <script lang="ts" setup>
-import LabEditor from "@/components/LabEditor.vue";
+import LabEditor from "@/components/lab-editor.vue";
 </script>
 
 <style lang="scss">

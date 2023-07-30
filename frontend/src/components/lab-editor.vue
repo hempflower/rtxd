@@ -1,6 +1,6 @@
 <template>
   <div class="lab-editor-container full-height">
-    <EditorBackground class="editor-bg"></EditorBackground>
+    <editor-background class="editor-bg"></editor-background>
     <div
       class="editor-container"
       ref="editorContainer"
@@ -52,7 +52,7 @@ import { ref, watch, onMounted, onBeforeUnmount } from "vue";
 import { LabEditor } from "@/editor/editor";
 import { useDocument } from "@/composables/doc";
 import { useEditAction } from "@/composables/edit-action";
-import EditorBackground from "@/editor/EditorBackground.vue";
+import EditorBackground from "@/components/editor-background.vue";
 import { FullScreen, VideoPause, VideoPlay } from "@element-plus/icons-vue";
 
 const editorContainer = ref<HTMLElement | null>(null);
