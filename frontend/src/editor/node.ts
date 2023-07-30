@@ -85,7 +85,7 @@ class NodeContextImpl implements LabNodeContext {
     this.node.actionInputInterfaces.set(name, input);
     this.node.addInput(
       name,
-      new ClassicPreset.Input(new ActionInputSocket(acceptTypes), label)
+      new ClassicPreset.Input(new ActionInputSocket(acceptTypes), label, true)
     );
 
     return input;
@@ -318,10 +318,10 @@ export class EditorNode extends ClassicPreset.Node {
     outputInterface: string,
     targetNode: EditorNode,
   ) {
-    const input = this.actionInputInterfaces.get(inputInterface);
-    const output = targetNode.actionOutputInterfaces.get(outputInterface);
+    const input = targetNode.actionInputInterfaces.get(inputInterface);
+    const output = this.actionOutputInterfaces.get(outputInterface);
     if (input && output) {
-      output.invokeAction = (data?: ActionPayload) => input.actionFn(data);
+      output.invokeAction = (data) => input.actionFn(data);
       input.isConnected = true;
       output.isConnected = true;
       input.onConnectedFn();
@@ -334,8 +334,8 @@ export class EditorNode extends ClassicPreset.Node {
     outputInterface: string,
     targetNode: EditorNode,
   ) {
-    const input = this.actionInputInterfaces.get(inputInterface);
-    const output = targetNode.actionOutputInterfaces.get(outputInterface);
+    const input = targetNode.actionInputInterfaces.get(inputInterface);
+    const output = this.actionOutputInterfaces.get(outputInterface);
     if (input && output) {
       output.invokeAction = () => null;
       input.isConnected = false;

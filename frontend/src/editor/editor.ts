@@ -157,8 +157,8 @@ const updateConnectionMap = (
     if (sourceSocket instanceof ActionOutputSocket) {
       if (targetSocket instanceof ActionInputSocket) {
         sourceNode.connectToActionInterface(
-          data.sourceOutput,
           data.targetInput,
+          data.sourceOutput,
           targetNode
         );
       }
@@ -177,8 +177,8 @@ const updateConnectionMap = (
     if (sourceSocket instanceof ActionOutputSocket) {
       if (targetSocket instanceof ActionInputSocket) {
         sourceNode.disconnectFromActionInterface(
-          data.sourceOutput,
           data.targetInput,
+          data.sourceOutput,
           targetNode
         );
       }
