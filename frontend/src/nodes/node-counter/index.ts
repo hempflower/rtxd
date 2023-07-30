@@ -1,51 +1,50 @@
-import { createHooksFromVue,LabNode } from "@/nodes/index";
-import type { LabNodeHooks, LabNodeContext } from "@/nodes";
+import type {
+  LabNodeHooks,
+  LabNodeContext,
+  LabNode,
+} from "@/nodes";
 import LabNodeCounter from "./node-view.vue";
-
-import { ref } from "vue";
+import { ref, createApp } from "vue";
+import type { App } from "vue";
 
 export const createNodeCounterHooks = (
   context: LabNodeContext
 ): LabNodeHooks => {
+  let app: App<Element>;
   const count = ref(0);
 
-  const { onMount, onUnmount, getApp } = createHooksFromVue(LabNodeCounter);
+  const inputTrigger = context.addActionInput("trigger", "计数", []);
+  const inputReset = context.addActionInput("reset", "重置", []);
+  const outputCount = context.addDataOutput("count", "计数", "number");
+
+  inputTrigger.onAction(() => {
+    count.value++;
+  });
+
+  inputReset.onAction(() => {
+    count.value = 0;
+  });
+
+  outputCount.onOutputData(() => {
+    return {
+      data: count.value,
+      type: "number",
+    };
+  });
 
   return {
-    onCreated: () => {
-      const app = getApp();
-      app.provide("readInput", (name: string) => {
-        return context.readInput(name);
-      });
-
-      app.provide("invokeAction", (name: string) => {
-        context.invokeAction(name);
-      });
-
+    onMount: (el: HTMLElement) => {
+      app = createApp(LabNodeCounter);
       app.provide("count", count);
+
+      app.mount(el);
+    },
+    onUnmount: () => {
+      app.unmount();
     },
     onStop: () => {
       count.value = 0;
     },
-    onAction: (name: string) => {
-      if (name === "trigger") {
-        count.value++;
-      } else if (name === "reset") {
-        count.value = 0;
-      }
-    },
-    onDataOutput: (name: string) => {
-      if (name === "count") {
-        return {
-          data: count.value,
-          type: "number",
-        };
-      }
-
-      return null;
-    },
-    onMount,
-    onUnmount,
   };
 };
 
@@ -54,25 +53,5 @@ export default <LabNode>{
   label: "触发计数",
   description: "对触发输入进行计数",
   vendor: "Evan Xiao",
-  inputs: [
-    {
-      name: "trigger",
-      label: "计数",
-      type: "action",
-      dataType: [],
-    },
-    {
-      name: "reset",
-      label: "重置",
-      type: "action",
-      dataType: [],
-    }
-  ],
-  outputs: [{
-    name: "count",
-    label: "计数",
-    type: "data",
-    dataType: "number",
-  }],
-  hooks: (node) =>  createNodeCounterHooks(node),
-}
+  hooks: (node) => createNodeCounterHooks(node),
+};

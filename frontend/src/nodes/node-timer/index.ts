@@ -1,23 +1,22 @@
-import { createHooksFromVue } from "@/nodes/index";
+import { getPersistentData } from "@/nodes/utils";
 import type { LabNodeContext, LabNodeHooks, LabNode } from "@/nodes";
 import LabNodeTimer from "./node-view.vue";
 import ElementPlus from "element-plus";
-import { ref } from "vue";
+import { App, createApp, ref } from "vue";
 
 export const createNodeTimerHooks = (context: LabNodeContext): LabNodeHooks => {
-  const timeout = ref(1000);
+  let app: App<Element>;
+  const { timeout } = getPersistentData(context, {
+    timeout: 1000,
+  });
+  const timerAction = context.addActionOutput("on_timer", "触发","");
   const timer = ref(0);
-  const { onMount, onUnmount, getApp } = createHooksFromVue(LabNodeTimer);
-  getApp().use(ElementPlus);
-
   const startTimer = () => {
     if (timer.value) {
       window.clearInterval(timer.value);
     }
-
     timer.value = window.setInterval(() => {
-      console.log("timer");
-      context.invokeAction("on_timer");
+      timerAction.invokeAction();
     }, timeout.value);
   };
 
@@ -27,19 +26,13 @@ export const createNodeTimerHooks = (context: LabNodeContext): LabNodeHooks => {
     }
   };
 
+
   return {
-    onCreated: () => {
-      getApp().provide("readInput", (name: string) => {
-        return context.readInput(name);
-      });
-
-      getApp().provide("invokeAction", (name: string) => {
-        context.invokeAction(name);
-      });
-
-      getApp().provide("updateTimeout", (time: number) => {
+    onMount: (el: HTMLElement) => {
+      app = createApp(LabNodeTimer);
+      app.use(ElementPlus);
+      app.provide("updateTimeout", (time: number) => {
         timeout.value = time;
-
         // if timer is running, restart it
         if (timer.value) {
           stopTimer();
@@ -47,7 +40,14 @@ export const createNodeTimerHooks = (context: LabNodeContext): LabNodeHooks => {
         }
       });
 
-      getApp().provide("timeout", timeout);
+      app.provide("timeout", timeout);
+      app.mount(el);
+    },
+    onUnmount: () => {
+      app?.unmount();
+      if (timer.value) {
+        window.clearInterval(timer.value);
+      }
     },
     onStart: () => {
       //
@@ -57,14 +57,6 @@ export const createNodeTimerHooks = (context: LabNodeContext): LabNodeHooks => {
       //
       stopTimer();
     },
-    onDestroy: () => {
-      //
-      if (timer.value) {
-        window.clearInterval(timer.value);
-      }
-    },
-    onMount,
-    onUnmount,
   };
 };
 
@@ -73,13 +65,5 @@ export default <LabNode>{
   label: "定时器",
   description: "定时器节点,每隔一段时间触发一次",
   vendor: "Evan Xiao",
-  inputs: [],
-  outputs: [
-    {
-      name: "on_timer",
-      label: "触发",
-      type: "action",
-    },
-  ],
   hooks: (context) => createNodeTimerHooks(context),
 };

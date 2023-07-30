@@ -141,39 +141,45 @@ const updateConnectionMap = (
   const sourceSocket = sourceNode.outputs[data.sourceOutput]?.socket;
   const targetSocket = targetNode.inputs[data.targetInput]?.socket;
 
+  // About connection:
   if (action === "create") {
     // Get socket type
     if (sourceSocket instanceof DataOutputSocket) {
       if (targetSocket instanceof DataInputSocket) {
-        targetNode.setInputDataFn(
+        targetNode.connectToDataInterface(
           data.targetInput,
-          () => sourceNode.dataOutputs.get(data.sourceOutput)?.() ?? null
+          data.sourceOutput,
+          sourceNode
         );
       }
     }
 
     if (sourceSocket instanceof ActionOutputSocket) {
       if (targetSocket instanceof ActionInputSocket) {
-        sourceNode.setOutputActionFn(
+        sourceNode.connectToActionInterface(
           data.sourceOutput,
-          `${targetNode.id}:${data.targetInput}`,
-          (payload?: ActionPayload) =>
-            targetNode.actionInputs.get(data.targetInput)?.(payload) ?? null
+          data.targetInput,
+          targetNode
         );
       }
     }
   } else if (action === "remove") {
     if (sourceSocket instanceof DataOutputSocket) {
       if (targetSocket instanceof DataInputSocket) {
-        targetNode.setInputDataFn(data.targetInput, null);
+        targetNode.disconnectFromDataInterface(
+          data.targetInput,
+          data.sourceOutput,
+          sourceNode
+        );
       }
     }
 
     if (sourceSocket instanceof ActionOutputSocket) {
       if (targetSocket instanceof ActionInputSocket) {
-        sourceNode.removeOutputActionFn(
+        sourceNode.disconnectFromActionInterface(
           data.sourceOutput,
-          `${targetNode.id}:${data.targetInput}`
+          data.targetInput,
+          targetNode
         );
       }
     }
@@ -189,9 +195,11 @@ export class LabEditor {
   private nodes = getRegisteredNodes();
   private autoSerialize = ref(true);
   private running = ref(false);
-  private stopWatchContent: () => void;
+  private lockContent = false;
+  private content = "";
+  private onContentChangeFn: (content: string) => void = () => null;
 
-  constructor(container: HTMLElement, private content: Ref<string>) {
+  constructor(container: HTMLElement) {
     this.editor = new NodeEditor<Schemes>();
     this.area = new AreaPlugin<Schemes, AreaExtra>(container);
     this.connection = new ConnectionPlugin<Schemes, AreaExtra>();
@@ -209,13 +217,14 @@ export class LabEditor {
           context.data,
           context.type === "connectioncreated" ? "create" : "remove"
         );
+        this.serializeJson();
       }
       return context;
     });
 
     this.area.addPipe((context) => {
       if (
-        ["nodedragged", "noderemoved", "nodecreate"].includes(context.type) &&
+        ["nodedragged", "noderemove", "nodecreate"].includes(context.type) &&
         this.autoSerialize.value
       ) {
         this.serializeJson();
@@ -236,13 +245,11 @@ export class LabEditor {
     );
 
     this.editor.addPipe((context) => {
-      if(context.type === 'noderemoved'){
+      if (context.type === "noderemove") {
         (context.data as EditorNode).destroy();
       }
-      return context
-    })
-
-    this.stopWatchContent = watch(this.content, () => this.deserializeJson());
+      return context;
+    });
 
     this.editor.use(this.area);
     this.area.use(this.connection);
@@ -261,25 +268,25 @@ export class LabEditor {
     this.autoZoom();
   }
 
-  private removeNode(nodeId: string) {
-    // call node hooks
-    const node = this.editor.getNode(nodeId) as EditorNode;
-    node.destroy();
-
-    this.editor.removeNode(nodeId);
+  public onContentChange(fn: (content: string) => void) {
+    this.onContentChangeFn = fn;
   }
 
-  private async deserializeJson() {
-    this.autoSerialize.value = false;
+  public saveJson() {
+    return this.content;
+  }
+
+  public async loadJson(newContent: string) {
     this.stop();
     await this.editor.clear();
-    if (this.content.value === "") {
+    if (newContent === "") {
       return;
     }
+    this.content = newContent;
     // Stop editor
     this.stop();
 
-    const data = loadFromJson(this.content.value);
+    const data = loadFromJson(this.content);
 
     // load nodes
     for (const node of data.nodes) {
@@ -313,14 +320,13 @@ export class LabEditor {
     }
 
     AreaExtensions.zoomAt(this.area, this.editor.getNodes());
-    this.autoSerialize.value = true;
+    this.lockContent = false;
   }
 
   private serializeJson() {
     const nodes = this.editor.getNodes() as EditorNode[];
     const connections = this.editor.getConnections();
-    this.stopWatchContent();
-    this.content.value = saveToJson({
+    this.content = saveToJson({
       nodes: nodes.map((node) => ({
         id: node.id,
         name: node.name,
@@ -338,7 +344,7 @@ export class LabEditor {
         },
       })),
     });
-    this.stopWatchContent = watch(this.content, () => this.deserializeJson());
+    this.onContentChangeFn(this.content);
   }
 
   public autoZoom() {
@@ -389,11 +395,25 @@ export class LabEditor {
     this.history.redo();
   }
 
-  public removeSelectedNodes() {
+  public async removeNode(id: string) {
+    const connections = this.editor
+      .getConnections()
+      .filter(
+        (connection) => connection.source === id || connection.target === id
+      );
+    for (const connection of connections) {
+      await this.editor.removeConnection(connection.id);
+    }
+    await this.editor.removeNode(id);
+  }
+
+  public async removeSelectedNodes() {
     const selectedNodes = this.editor
       .getNodes()
       .filter((node) => node.selected);
-    selectedNodes.forEach((node) => this.editor.removeNode(node.id));
+    for (const node of selectedNodes) {
+      await this.removeNode(node.id);
+    }
   }
 
   public cloneSelectedNodes() {

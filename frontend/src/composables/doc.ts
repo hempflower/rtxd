@@ -21,7 +21,10 @@ EventsOn("document-opened", (data: { content: string; path: string }) => {
   nextTick(() => {
     isDirty.value = false;
   });
+  onLoadContentFn();
 });
+
+let onLoadContentFn : () => void = () => null;
 
 const save = async () => {
   if (isUntitled.value) {
@@ -69,7 +72,13 @@ const close = async () => {
     content.value = "";
     isUntitled.value = true;
     isDirty.value = false;
+
+    onLoadContentFn();
   });
+};
+
+const onLoadContent = (fn: () => void) => {
+  onLoadContentFn = fn;
 };
 
 export const useDocument = () => {
@@ -78,6 +87,7 @@ export const useDocument = () => {
     save,
     saveAs,
     close,
+    onLoadContent,
     filePath,
     content,
     isDirty,

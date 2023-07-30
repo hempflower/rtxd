@@ -1,6 +1,16 @@
 import { ClassicPreset } from "rete";
-import type { ActionFn, DataFn, ActionPayload } from "./types";
-import type { LabNode, LabNodeHooks } from "@/nodes";
+import type { ActionFn, DataFn } from "./types";
+import type {
+  LabNode,
+  LabNodeHooks,
+  LabNodeContext,
+  ActionPayload,
+  LabNodeActionInputInterface,
+  LabNodeActionOutputInterface,
+  LabNodeDataInputInterface,
+  LabNodeDataOutputInterface,
+  LabNodeInterface,
+} from "@/nodes";
 import { AreaPlugin } from "rete-area-plugin";
 
 import {
@@ -20,21 +30,223 @@ class CustomControl extends ClassicPreset.Control {
   }
 }
 
+class NodeContextImpl implements LabNodeContext {
+  private node: EditorNode;
+  private area: AreaPlugin<Schemes, AreaExtra>;
+
+  constructor(node: EditorNode, area: AreaPlugin<Schemes, AreaExtra>) {
+    this.node = node;
+    this.area = area;
+  }
+
+  readInput(name: string): { data: unknown; type: string } | null {
+    return this.node.dataInputInterfaces.get(name)?.readData() ?? null;
+  }
+  invokeAction(name: string, data?: ActionPayload | undefined): void {
+    return this.node.actionOutputInterfaces.get(name)?.invokeAction(data);
+  }
+  updateNode(): void {
+    return this.node.updateNodeStatus();
+  }
+  loadData(): string {
+    return this.node.getData();
+  }
+  saveData(data: string): void {
+    return this.node.setData(data);
+  }
+  addDataInput(
+    name: string,
+    label: string,
+    acceptTypes: []
+  ): LabNodeDataInputInterface {
+    const input = new LabNodeDataInputInterfaceImpl(
+      name,
+      acceptTypes,
+      () => null
+    );
+    this.node.dataInputInterfaces.set(name, input);
+    this.node.addInput(
+      name,
+      new ClassicPreset.Input(new DataInputSocket(acceptTypes), label)
+    );
+
+    return input;
+  }
+  addActionInput(
+    name: string,
+    label: string,
+    acceptTypes: []
+  ): LabNodeActionInputInterface {
+    const input = new LabNodeActionInputInterfaceImpl(
+      name,
+      acceptTypes,
+      () => null
+    );
+    this.node.actionInputInterfaces.set(name, input);
+    this.node.addInput(
+      name,
+      new ClassicPreset.Input(new ActionInputSocket(acceptTypes), label)
+    );
+
+    return input;
+  }
+  addDataOutput(
+    name: string,
+    label: string,
+    dataType: string
+  ): LabNodeDataOutputInterface {
+    const output = new LabNodeDataOutputInterfaceImpl(
+      name,
+      dataType,
+      () => null
+    );
+    this.node.dataOutputInterfaces.set(name, output);
+    this.node.addOutput(
+      name,
+      new ClassicPreset.Output(new DataOutputSocket(dataType), label)
+    );
+
+    return output;
+  }
+  addActionOutput(
+    name: string,
+    label: string,
+    dataType: string
+  ): LabNodeActionOutputInterface {
+    const output = new LabNodeActionOutputInterfaceImpl(
+      name,
+      dataType,
+      () => null
+    );
+    this.node.actionOutputInterfaces.set(name, output);
+    this.node.addOutput(
+      name,
+      new ClassicPreset.Output(new ActionOutputSocket(dataType), label)
+    );
+
+    return output;
+  }
+  removeInput(name: string): void {
+    this.node.removeInput(name);
+  }
+  removeOutput(name: string): void {
+    this.node.removeOutput(name);
+  }
+}
+
+class LabNodeInterfaceImpl implements LabNodeInterface {
+  name: string;
+  isConnected: boolean;
+
+  onConnectedFn: () => void = () => 0;
+  onDisconnectedFn: () => void = () => 0;
+  constructor(name: string) {
+    this.isConnected = false;
+    this.name = name;
+  }
+  public onConnected(fn: () => void) {
+    this.onConnectedFn = fn;
+  }
+
+  public onDisconnected(fn: () => void) {
+    this.onDisconnectedFn = fn;
+  }
+}
+
+class LabNodeActionInputInterfaceImpl
+  extends LabNodeInterfaceImpl
+  implements LabNodeActionInputInterface
+{
+  acceptTypes: string[];
+  actionFn: ActionFn;
+
+  constructor(name: string, acceptTypes: string[], onAction: ActionFn) {
+    super(name);
+    this.acceptTypes = acceptTypes;
+    this.actionFn = onAction;
+  }
+
+  public onAction(fn : (data?: ActionPayload) => void) {
+    this.actionFn = fn;
+  }
+
+}
+
+class LabNodeActionOutputInterfaceImpl
+  extends LabNodeInterfaceImpl
+  implements LabNodeActionOutputInterface
+{
+  dataType: string;
+  invokeAction: ActionFn;
+
+  constructor(name: string, dataType: string, invokeAction: ActionFn) {
+    super(name);
+    this.dataType = dataType;
+    this.invokeAction = invokeAction;
+  }
+}
+
+class LabNodeDataInputInterfaceImpl
+  extends LabNodeInterfaceImpl
+  implements LabNodeDataInputInterface
+{
+  acceptTypes: string[];
+  readData: DataFn;
+
+  constructor(name: string, acceptTypes: string[], readData: DataFn) {
+    super(name);
+    this.acceptTypes = acceptTypes;
+    this.readData = readData;
+  }
+}
+
+class LabNodeDataOutputInterfaceImpl
+  extends LabNodeInterfaceImpl
+  implements LabNodeDataOutputInterface
+{
+  dataType: string;
+  outputDataFn: DataFn;
+
+  constructor(name: string, dataType: string, onOutputData: DataFn) {
+    super(name);
+    this.dataType = dataType;
+    this.outputDataFn = onOutputData;
+  }
+
+  public onOutputData(fn: () => { data: unknown; type: string } | null) {
+    this.outputDataFn = fn;
+  }
+
+}
+
 export class EditorNode extends ClassicPreset.Node {
   public readonly name: string;
 
-  private dataInputs = new Map<string, DataFn>();
-  public readonly dataOutputs = new Map<string, DataFn>();
+  public readonly dataInputInterfaces = new Map<
+    string,
+    LabNodeDataInputInterfaceImpl
+  >();
+  public readonly dataOutputInterfaces = new Map<
+    string,
+    LabNodeDataOutputInterfaceImpl
+  >();
 
-  public readonly actionInputs = new Map<string, ActionFn>();
-  private actionOutputs = new Map<string, Map<string, ActionFn>>();
+  public readonly actionInputInterfaces = new Map<
+    string,
+    LabNodeActionInputInterfaceImpl
+  >();
+  public readonly actionOutputInterfaces = new Map<
+    string,
+    LabNodeActionOutputInterfaceImpl
+  >();
 
-  private _hooks: LabNodeHooks | null = null;
+  public hooks: LabNodeHooks;
 
   private area: AreaPlugin<Schemes, AreaExtra>;
 
   private data = "";
   private config: LabNode;
+  private nodeContext: LabNodeContext;
 
   constructor(
     config: LabNode,
@@ -46,47 +258,10 @@ export class EditorNode extends ClassicPreset.Node {
     this.area = area;
     this.config = config;
     this.data = data ?? "";
+    this.nodeContext = new NodeContextImpl(this, this.area);
+    this.hooks = this.config.hooks(this.nodeContext);
 
-    this.config.outputs
-      .filter((v) => v.type === "data")
-      .forEach((output) => {
-        this.dataOutputs.set(output.name, () => {
-          return this.hooks.onDataOutput?.(output.name) ?? null;
-        });
-      });
-    this.config.outputs
-      .filter((v) => v.type === "action")
-      .forEach((output) => {
-        this.actionOutputs.set(output.name, new Map());
-      });
-
-    this.config.inputs
-      .filter((v) => v.type === "action")
-      .forEach((input) => {
-        this.actionInputs.set(input.name, (data?: ActionPayload) => {
-          return this.hooks.onAction?.(input.name, data) ?? null;
-        });
-      });
     this.addHTMLElementBody();
-    this.addSockets();
-  }
-
-  get hooks() {
-    if(!this._hooks){
-      this._hooks = this.config.hooks({
-        readInput: (name: string) => this.readInput(name),
-        invokeAction: (name: string, data?: ActionPayload) =>
-          this.invokeAction(name, data),
-        updateNode: () => this.updateNodeStatus(),
-        loadData: () => this.data,
-        saveData: (data: string) => {
-          this.data = data;
-        },
-      });
-      this._hooks.onCreated?.();
-    }
-
-    return this._hooks;
   }
 
   private addHTMLElementBody() {
@@ -97,78 +272,91 @@ export class EditorNode extends ClassicPreset.Node {
           this.hooks.onMount(el);
         },
         () => {
-          console.log("unmount");
-          this.hooks.onStop?.()
-          this.hooks.onDestroy?.();
+          this.hooks.onStop?.();
           this.hooks.onUnmount();
         }
       )
     );
   }
-  private addSockets() {
-    this.config.inputs.forEach((input) => {
-      if (input.type === "action") {
-        this.addInput(
-          input.name,
-          new ClassicPreset.Input(
-            new ActionInputSocket(input.dataType),
-            input.label
-          )
-        );
-      } else {
-        this.addInput(
-          input.name,
-          new ClassicPreset.Input(
-            new DataInputSocket(input.dataType),
-            input.label
-          )
-        );
-      }
-    });
 
-    this.config.outputs.forEach((output) => {
-      if (output.type === "action") {
-        this.addOutput(
-          output.name,
-          new ClassicPreset.Output(
-            new ActionOutputSocket(output.dataType ?? ""),
-            output.label
-          )
-        );
-      } else {
-        this.addOutput(
-          output.name,
-          new ClassicPreset.Output(
-            new DataOutputSocket(output.dataType),
-            output.label
-          )
-        );
-      }
-    });
+  public connectToDataInterface(
+    inputInterface: string,
+    outputInterface: string,
+    targetNode: EditorNode,
+
+  ) {
+    const input = this.dataInputInterfaces.get(inputInterface);
+    const output = targetNode.dataOutputInterfaces.get(outputInterface);
+    if (input && output) {
+      input.readData = () => output.outputDataFn();
+      input.isConnected = true;
+      output.isConnected = true;
+      input.onConnectedFn();
+      output.onConnectedFn();
+    }
   }
 
-  public readInput(name: string) {
-    const input = this.dataInputs.get(name);
-    return input?.() ?? null;
+  public disconnectFromDataInterface(
+    inputInterface: string,
+    outputInterface: string,
+    targetNode: EditorNode
+  ) {
+    const input = this.dataInputInterfaces.get(inputInterface);
+    const output = targetNode.dataOutputInterfaces.get(outputInterface);
+
+    if (input && output) {
+      input.readData = () => null;
+      input.isConnected = false;
+      output.isConnected = false;
+      input.onDisconnectedFn();
+      output.onDisconnectedFn();
+    }
   }
 
-  public invokeAction(name: string, data?: ActionPayload) {
-    const action = this.actionOutputs.get(name);
-    action?.forEach((v) => {
-      v(data);
-    });
+  public connectToActionInterface(
+    inputInterface: string,
+    outputInterface: string,
+    targetNode: EditorNode,
+  ) {
+    const input = this.actionInputInterfaces.get(inputInterface);
+    const output = targetNode.actionOutputInterfaces.get(outputInterface);
+    if (input && output) {
+      output.invokeAction = (data?: ActionPayload) => input.actionFn(data);
+      input.isConnected = true;
+      output.isConnected = true;
+      input.onConnectedFn();
+      output.onConnectedFn();
+    }
+  }
+
+  public disconnectFromActionInterface(
+    inputInterface: string,
+    outputInterface: string,
+    targetNode: EditorNode,
+  ) {
+    const input = this.actionInputInterfaces.get(inputInterface);
+    const output = targetNode.actionOutputInterfaces.get(outputInterface);
+    if (input && output) {
+      output.invokeAction = () => null;
+      input.isConnected = false;
+      output.isConnected = false;
+      input.onDisconnectedFn();
+      output.onDisconnectedFn();
+    }
+  }
+
+  public readOutputData(name: string): { data: unknown; type: string } | null {
+    const output = this.dataOutputInterfaces.get(name);
+    return output?.outputDataFn() ?? null;
+  }
+
+  public invokeInputAction(name: string, data?: ActionPayload) {
+    const action = this.actionInputInterfaces.get(name);
+    action?.actionFn(data);
   }
 
   public updateNodeStatus() {
     this.area.update("node", this.id);
-  }
-
-  public setInputDataFn(name: string, data?: DataFn | null) {
-    if (!data) {
-      this.dataInputs.delete(name);
-      return;
-    }
-    this.dataInputs.set(name, data);
   }
 
   public setData(data: string) {
@@ -179,21 +367,7 @@ export class EditorNode extends ClassicPreset.Node {
     return this.data;
   }
 
-  public setOutputActionFn(name: string, id: string, action?: ActionFn | null) {
-    if (!action) {
-      this.actionOutputs.delete(name);
-      return;
-    }
-    this.actionOutputs.get(name)?.set(id, action);
-  }
-
-  public removeOutputActionFn(name: string, id: string) {
-    this.actionOutputs.get(name)?.delete(id);
-  }
-
   public destroy() {
     this.hooks.onUnmount();
-    // If use undo redo, this class will be reused
-    this._hooks = null
   }
 }

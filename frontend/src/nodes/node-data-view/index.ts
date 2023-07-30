@@ -1,19 +1,37 @@
-import { createHooksFromVue, LabNode } from "@/nodes/index";
-import type { LabNodeHooks, LabNodeContext, ActionPayload } from "@/nodes";
+import { createHooksFromVue } from "@/nodes/utils";
+import type {
+  LabNodeHooks,
+  LabNodeContext,
+  LabNode,
+  ActionPayload,
+} from "@/nodes";
 import LabNodeDataView from "./node-view.vue";
 
-import { ref } from "vue";
+import { ref, createApp } from "vue";
+import type { App } from "vue";
 
 export const createNodeDataViewHooks = (
   context: LabNodeContext
 ): LabNodeHooks => {
-  const { onMount, onUnmount, getApp } = createHooksFromVue(LabNodeDataView);
+  let app: App<Element>;
 
   const dataText = ref("null");
-  let timer: number | null = null;
+  let timer = 0;
 
-  const readInput = (name: string) => {
-    const input = context.readInput(name);
+  const inputAction = context.addActionInput("action", "输入", []);
+  const inputData = context.addDataInput("input", "输入", []);
+
+  inputAction.onAction((data?: ActionPayload) => {
+    if (!data) {
+      return;
+    }
+    // if use action input, clear timer
+    stopTimer();
+    showData(data.data, data.type);
+  });
+
+  const readInput = () => {
+    const input = inputData.readData();
     if (!input) {
       dataText.value = "null";
     } else {
@@ -26,7 +44,7 @@ export const createNodeDataViewHooks = (
       window.clearInterval(timer);
     }
     timer = window.setInterval(() => {
-      readInput("input");
+      readInput();
     }, 100);
   };
 
@@ -46,24 +64,22 @@ export const createNodeDataViewHooks = (
         text += bytes[i].toString(16).padStart(2, "0") + " ";
       }
       dataText.value = text;
-
     } else {
       dataText.value = JSON.stringify(data);
     }
   };
 
   return {
-    onCreated: () => {
-      const app = getApp();
-      app.provide("readInput", (name: string) => {
-        return context.readInput(name);
-      });
-
-      app.provide("invokeAction", (name: string) => {
-        context.invokeAction(name);
-      });
-
+    onMount: (el: HTMLElement) => {
+      app = createApp(LabNodeDataView);
       app.provide("dataText", dataText);
+      app.mount(el);
+    },
+    onUnmount: () => {
+      app?.unmount();
+      if (timer) {
+        window.clearInterval(timer);
+      }
     },
     onStart: () => {
       //
@@ -75,17 +91,6 @@ export const createNodeDataViewHooks = (
 
       dataText.value = "null";
     },
-    onAction: (name: string, data?: ActionPayload) => {
-      if (name === "on_input") {
-        if (data?.data) {
-          // if use action input, clear timer
-          stopTimer();
-          showData(data.data, data.type);
-        }
-      }
-    },
-    onMount,
-    onUnmount,
   };
 };
 
@@ -94,20 +99,5 @@ export default <LabNode>{
   label: "数据显示",
   description: "显示输出的数据",
   vendor: "Evan Xiao",
-  inputs: [
-    {
-      name: "input",
-      label: "数据",
-      type: "data",
-      dataType: [],
-    },
-    {
-      name: "on_input",
-      label: "触发输入",
-      type: "action",
-      dataType: [],
-    },
-  ],
-  outputs: [],
   hooks: (context) => createNodeDataViewHooks(context),
 };

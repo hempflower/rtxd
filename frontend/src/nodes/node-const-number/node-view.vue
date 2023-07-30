@@ -1,6 +1,6 @@
 <template>
     <div>
-        <el-input v-model="inputVal" placeholder="请输入数值" @change="onInput"/>
+        <el-input type="number" v-model="inputVal" placeholder="请输入数值" @change="onInput"/>
     </div>
 </template>
 <script setup lang="ts">

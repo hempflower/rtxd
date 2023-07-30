@@ -1,30 +1,38 @@
-import { createHooksFromVue, LabNode } from "@/nodes/index";
-import type { LabNodeHooks, LabNodeContext } from "@/nodes";
+import { getPersistentData } from "@/nodes/utils";
+import type {
+  LabNodeHooks,
+  LabNodeContext,
+  LabNode,
+  ActionPayload,
+} from "@/nodes";
 import LabNodeConstNumber from "./node-view.vue";
 import ElementPlus from "element-plus";
-import { ref } from "vue";
+import { ref, createApp } from "vue";
+import type { App } from "vue";
 
 export const createNodeConstNumberHooks = (
   context: LabNodeContext
 ): LabNodeHooks => {
-  const { onMount, onUnmount, getApp } = createHooksFromVue(LabNodeConstNumber);
-  const app = getApp();
-  app.use(ElementPlus);
-
+  let app: App<Element>;
   const value = ref(0);
+  const outputHandle =  context.addDataOutput("output", "输出", "number")
+
+  outputHandle.onOutputData(() => {
+    return {
+      data: value.value,
+      type: "number",
+    };
+  })
 
   return {
-    onCreated: () => {
-      const app = getApp();
-      app.provide("readInput", (name: string) => {
-        return context.readInput(name);
-      });
-
-      app.provide("invokeAction", (name: string) => {
-        context.invokeAction(name);
-      });
-
+    onMount: (el: HTMLElement) => {
+      app = createApp(LabNodeConstNumber);
+      app.use(ElementPlus);
       app.provide("value", value);
+      app.mount(el);
+    },
+    onUnmount: () => {
+      app.unmount();
     },
     onDataOutput: (name: string) => {
       if (name === "output") {
@@ -36,8 +44,6 @@ export const createNodeConstNumberHooks = (
 
       return null;
     },
-    onMount,
-    onUnmount,
   };
 };
 
@@ -46,14 +52,5 @@ export default <LabNode>{
   label: "数值常量",
   description: "提供一个数值常量",
   vendor: "Evan Xiao",
-  inputs: [],
-  outputs: [
-    {
-      name: "output",
-      label: "数值",
-      type: "data",
-      dataType: "number",
-    },
-  ],
   hooks: (context) => createNodeConstNumberHooks(context),
 };

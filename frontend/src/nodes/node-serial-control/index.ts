@@ -1,18 +1,23 @@
-import { createHooksFromVue, LabNode } from "@/nodes/index";
-import type { LabNodeHooks, LabNodeContext, ActionPayload } from "@/nodes";
+import { createHooksFromVue } from "@/nodes/utils";
+import type {
+  LabNodeHooks,
+  LabNodeContext,
+  LabNode,
+  ActionPayload,
+} from "@/nodes";
 import LabNodeDebug from "./node-view.vue";
 import ElementPlus from "element-plus";
 
 import { ref } from "vue";
+import { App, createApp } from "vue";
 import { useSerialOptionsModel } from "@/composables/serial";
 import { createSerialPortClient } from "@/serial";
 import type { ISerialPortClient } from "@/serial";
 
 export const createNodeHooks = (context: LabNodeContext): LabNodeHooks => {
-  const { onMount, onUnmount, getApp } = createHooksFromVue(LabNodeDebug);
-  getApp().use(ElementPlus);
+  let app: App<Element>;
 
-  const runnning = ref(false);
+  const running = ref(false);
   const isConnect = ref(false);
   const connectionId = ref(-1);
   const { serialOptions } = useSerialOptionsModel();
@@ -29,7 +34,7 @@ export const createNodeHooks = (context: LabNodeContext): LabNodeHooks => {
       return;
     }
 
-    if (!runnning.value) {
+    if (!running.value) {
       return;
     }
 
@@ -47,23 +52,19 @@ export const createNodeHooks = (context: LabNodeContext): LabNodeHooks => {
       isConnect.value = true;
       connectionId.value = id;
 
-      context.invokeAction("onConnect", {
-        data: id,
-        type: "number",
-      });
+      outputOnConnectAction.invokeAction()
     });
 
     serialClient.value.onDisconnect(() => {
       isConnect.value = false;
       connectionId.value = -1;
-      context.invokeAction("onDisconnect");
+      outputOnDisconnectAction.invokeAction()
     });
 
     serialClient.value.open();
   };
 
   const onCloseSerial = async () => {
-    // stub
     if (serialClient.value) {
       await serialClient.value.close();
       serialClient.value.destroy();
@@ -72,16 +73,56 @@ export const createNodeHooks = (context: LabNodeContext): LabNodeHooks => {
   };
 
   const onSerialDataCallback = (data: ArrayBuffer) => {
-    // stub
-    context.invokeAction("onData", {
+    outputOnDataAction.invokeAction({
       data: data,
       type: "bytes",
     });
   };
 
+  // Sockets
+  const inputConnectAction = context.addActionInput("connect", "连接", []);
+  const inputDisconnectAction = context.addActionInput("disconnect", "断开", []);
+  const inputWriteAction = context.addActionInput("data", "写数据", ["bytes"]);
+
+  const outputStatusData = context.addDataOutput("status", "连接状态", "boolean");
+  const outputOnConnectAction = context.addActionOutput("connect", "建立连接", "");
+  const outputOnDisconnectAction = context.addActionOutput("disconnect", "断开连接", "");
+  const outputOnDataAction = context.addActionOutput("data", "收到数据", "bytes");
+
+  inputConnectAction.onAction(() => {
+    onOpenSerial();
+  });
+
+  inputDisconnectAction.onAction(() => {
+    onCloseSerial();
+  });
+
+  inputWriteAction.onAction((data?: ActionPayload) => {
+    if (!data) {
+      return;
+    }
+
+    if (data.type === "bytes") {
+      if (serialClient.value && isConnect.value) {
+        serialClient.value.write(data.data as ArrayBuffer);
+      }
+    }
+  })
+
+  outputStatusData.onOutputData(() => {
+    return {
+      data: isConnect.value,
+      type: "boolean",
+    }
+  })
+
+
+
+
   return {
-    onCreated: () => {
-      const app = getApp();
+    onMount: (el: HTMLElement) => {
+      app = createApp(LabNodeDebug);
+      app.use(ElementPlus);
       app.provide("readInput", (name: string) => {
         return context.readInput(name);
       });
@@ -94,14 +135,19 @@ export const createNodeHooks = (context: LabNodeContext): LabNodeHooks => {
       app.provide("onCloseSerial", onCloseSerial);
       app.provide("isConnect", isConnect);
       app.provide("serialOptions", serialOptions);
+
+      app.mount(el);
+    },
+    onUnmount: () => {
+      app.unmount();
     },
     onStart: () => {
       //
-      runnning.value = true;
+      running.value = true;
     },
     onStop: () => {
       //
-      runnning.value = false;
+      running.value = false;
       if (isConnect.value) {
         onCloseSerial();
       }
@@ -132,8 +178,6 @@ export const createNodeHooks = (context: LabNodeContext): LabNodeHooks => {
         }
       }
     },
-    onMount,
-    onUnmount,
   };
 };
 
@@ -143,56 +187,5 @@ export default <LabNode>{
   description: "提供串口连接功能",
   vendor: "Evan Xiao",
   category: "串口",
-  inputs: [
-    {
-      name: "connect",
-      label: "连接",
-      type: "action",
-      dataType: [],
-    },
-    {
-      name: "disconnect",
-      label: "断开",
-      type: "action",
-      dataType: [],
-    },
-    {
-      name: "data",
-      label: "写数据",
-      type: "action",
-      dataType: ["bytes"],
-    },
-  ],
-  outputs: [
-    {
-      name: "serial",
-      label: "连接 ID",
-      type: "data",
-      dataType: "string",
-    },
-    {
-      name: "status",
-      label: "连接状态",
-      type: "data",
-      dataType: "boolean",
-    },
-    {
-      name: "onConnect",
-      label: "连接",
-      type: "action",
-      dataType: "number",
-    },
-    {
-      name: "onDisconnect",
-      label: "断开",
-      type: "action",
-    },
-    {
-      name: "onData",
-      label: "收到数据",
-      type: "action",
-      dataType: "bytes",
-    },
-  ],
   hooks: (context) => createNodeHooks(context),
 };

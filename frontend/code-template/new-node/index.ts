@@ -3,8 +3,17 @@ import type { LabNodeHooks, LabNodeContext } from "@/nodes";
 import LadNodeView from "./node-view.vue";
 
 export const createNodeHooks = (context: LabNodeContext): LabNodeHooks => {
-  const { onMount, onUnmount, app } = createHooksFromVue(LadNodeView);
-
+  const { onMount, onUnmount, getApp, getPersistentData } =
+    createHooksFromVue(LadNodeView);
+  // Vue app instance
+  const app = getApp();
+  // Persistent example
+    // If node being saved, foo.value will be saved to node data
+  const { foo } = getPersistentData({
+    foo: 1,
+  });
+  console.log(foo.value);
+  foo.value++;
   return {
     onCreate: () => {
       app.provide("readInput", (name: string) => {
@@ -35,7 +44,7 @@ export default <LabNode>{
     {
       name: "input1",
       label: "输入1",
-      type: 'data',
+      type: "data",
       dataType: ["number"],
     },
     {
@@ -49,7 +58,7 @@ export default <LabNode>{
     {
       name: "output1",
       label: "输出1",
-      type: 'data',
+      type: "data",
       dataType: "number",
     },
     {

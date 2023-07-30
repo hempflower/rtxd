@@ -1,60 +1,76 @@
-import { createHooksFromVue, LabNode } from "@/nodes/index";
-import type { LabNodeHooks, LabNodeContext, ActionPayload } from "@/nodes";
+import { createHooksFromVue } from "@/nodes/utils";
+import type {
+  LabNodeHooks,
+  LabNodeContext,
+  LabNode,
+  ActionPayload,
+} from "@/nodes";
 import LadNodeView from "./node-view.vue";
 import ElementPlus from "element-plus";
 
-import { ref } from "vue";
+import { ref, createApp } from "vue";
+import type { App } from "vue";
 
 export const createNodeHooks = (context: LabNodeContext): LabNodeHooks => {
-  const { onMount, onUnmount, getApp } = createHooksFromVue(LadNodeView);
-  getApp().use(ElementPlus);
+  let app: App<Element>;
+
+  const inputAction = context.addActionInput("action", "输入", ["string"]);
+  const outputAction = context.addActionOutput("action", "输出", "bytes");
+  const inputData = context.addDataInput("input", "输入", ["string"]);
+  const outputData = context.addDataOutput("output", "输出", "bytes");
+
+  inputAction.onAction((data?: ActionPayload) => {
+    if (!data) {
+      return;
+    }
+
+    const bytes = new TextEncoder().encode(data.data as string).buffer;
+    outputAction.invokeAction({
+      data: bytes,
+      type: "bytes",
+    });
+  });
+
+  outputData.onOutputData(() => {
+    const input = inputData.readData();
+    if (!input) {
+      return null;
+    }
+
+    if (input.type === "string") {
+      const bytes = new TextEncoder().encode(input.data as string).buffer;
+      return {
+        data: bytes,
+        type: "bytes",
+      };
+    }
+
+    return null;
+  });
 
   return {
-    onCreated: () => {
-      getApp().provide("readInput", (name: string) => {
+    onMount: (el: HTMLElement) => {
+      app = createApp(LadNodeView);
+      app.use(ElementPlus);
+      app.provide("readInput", (name: string) => {
         return context.readInput(name);
       });
 
-      getApp().provide("invokeAction", (name: string) => {
+      app.provide("invokeAction", (name: string) => {
         context.invokeAction(name);
       });
+
+      app.mount(el);
+    },
+    onUnmount: () => {
+      app.unmount();
     },
     onStart: () => {
       //
     },
     onStop: () => {
       //
-    },
-    onAction: (name: string,data?: ActionPayload) => {
-      if(!data){
-        return;
-      }
-
-      const bytes = new TextEncoder().encode(data.data as string).buffer;
-
-      context.invokeAction("action", {
-        data: bytes,
-        type: "bytes",
-      })
-    },
-    onDataOutput: () => {
-      const input = context.readInput("input");
-      if (!input) {
-        return null;
-      }
-
-      if (input.type === "string") {
-        const bytes = new TextEncoder().encode(input.data as string).buffer;
-        return {
-          data: bytes,
-          type: "bytes",
-        } 
-      }
-
-      return null;
-    },
-    onMount,
-    onUnmount,
+    }
   };
 };
 
@@ -64,33 +80,5 @@ export default <LabNode>{
   description: "可以将文本数据转换为二进制数据",
   vendor: "Evan Xiao",
   category: "文本",
-  inputs: [
-    {
-      name: "input",
-      label: "输入",
-      type: 'data',
-      dataType: ["string"],
-    },
-    {
-      name: "action",
-      label: "输入",
-      type: "action",
-      dataType: ["string"],
-    },
-  ],
-  outputs: [
-    {
-      name: "output",
-      label: "输出",
-      type: 'data',
-      dataType: "bytes",
-    },
-    {
-      name: "action",
-      label: "输出",
-      type: "action",
-      dataType: "bytes",
-    },
-  ],
   hooks: (context) => createNodeHooks(context),
 };

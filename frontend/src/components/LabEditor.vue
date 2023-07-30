@@ -62,17 +62,25 @@ const zooming = ref(false);
 
 const running = ref(false);
 
-const { content } = useDocument();
+const { content,onLoadContent } = useDocument();
 const { undoFn, redoFn, deleteFn, cloneFn } = useEditAction();
 
 const createEditorInstance = async () => {
   const container = editorContainer.value as HTMLElement;
-  editorInstance = new LabEditor(container, content);
+  editorInstance = new LabEditor(container);
 
   undoFn.value = () => editorInstance?.undo();
   redoFn.value = () => editorInstance?.redo();
   deleteFn.value = () => editorInstance?.removeSelectedNodes();
   cloneFn.value = () => editorInstance?.cloneSelectedNodes();
+
+  onLoadContent(() => {
+    editorInstance?.loadJson(content.value);
+  });
+
+  editorInstance.onContentChange((json) => {
+    content.value = json;
+  });
 
   watch(editorInstance.isRunning, (val) => {
     running.value = val;

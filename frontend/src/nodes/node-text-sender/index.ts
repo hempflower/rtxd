@@ -1,18 +1,28 @@
-import { createHooksFromVue, LabNode } from "@/nodes/index";
-import type { LabNodeHooks, LabNodeContext } from "@/nodes";
+import { getPersistentData } from "@/nodes/utils";
+import type { LabNodeHooks, LabNodeContext, LabNode } from "@/nodes";
 import LadNodeView from "./node-view.vue";
 import ElementPlus from "element-plus";
 
-import { ref } from "vue";
+import { App, ref, createApp } from "vue";
 
 export const createNodeHooks = (context: LabNodeContext): LabNodeHooks => {
-  const { onMount, onUnmount, getApp } = createHooksFromVue(LadNodeView);
+  let app: App<Element>;
+  const { inputText, appendLine, enterSend } = getPersistentData(context, {
+    inputText: "",
+    appendLine: "",
+    enterSend: true,
+  });
 
-  getApp().use(ElementPlus);
+  const inputTextData = context.addDataInput("text", "内容", ["string"]);
+  const inputSendAction = context.addActionInput("send", "发送", []);
 
-  const inputText = ref<string>("");
+  const outputTextAction = context.addActionOutput("output", "数据", "string");
+
+  inputSendAction.onAction(() => {
+    sendText();
+  });
+
   const running = ref<boolean>(false);
-  const appendLine = ref<boolean>(true);
 
   const sendText = () => {
     if (!running.value) {
@@ -20,7 +30,7 @@ export const createNodeHooks = (context: LabNodeContext): LabNodeHooks => {
     }
 
     const textField = inputText.value;
-    const exInput = context.readInput("text");
+    const exInput = inputTextData.readData();
 
     let text = "";
 
@@ -36,10 +46,10 @@ export const createNodeHooks = (context: LabNodeContext): LabNodeHooks => {
     // 为了方便调试，将 \n 替换为 \r\n，比如 AT 指令
     text = text.replaceAll("\n", "\r\n");
 
-    context.invokeAction("output", {
+    outputTextAction.invokeAction({
       data: appendLine.value ? text + "\r\n" : text,
       type: "string",
-    });
+    })
   };
 
   const updateNodeConnection = () => {
@@ -47,20 +57,20 @@ export const createNodeHooks = (context: LabNodeContext): LabNodeHooks => {
   };
 
   return {
-    onCreated: () => {
-      getApp().provide("readInput", (name: string) => {
-        return context.readInput(name);
-      });
+    onMount: (el: HTMLElement) => {
+      app = createApp(LadNodeView);
+      app.use(ElementPlus);
+      app.provide("inputText", inputText);
+      app.provide("sendText", sendText);
+      app.provide("updateNodeConnection", updateNodeConnection);
+      app.provide("running", running);
+      app.provide("appendLine", appendLine);
+      app.provide("enterSend", enterSend);
 
-      getApp().provide("invokeAction", (name: string) => {
-        context.invokeAction(name);
-      });
-
-      getApp().provide("inputText", inputText);
-      getApp().provide("sendText", sendText);
-      getApp().provide("updateNodeConnection", updateNodeConnection);
-      getApp().provide("running", running);
-      getApp().provide("appendLine", appendLine);
+      app.mount(el);
+    },
+    onUnmount: () => {
+      app.unmount();
     },
     onStart: () => {
       //
@@ -70,13 +80,6 @@ export const createNodeHooks = (context: LabNodeContext): LabNodeHooks => {
       //
       running.value = false;
     },
-    onAction: (name: string) => {
-      if (name === "send") {
-        sendText();
-      }
-    },
-    onMount,
-    onUnmount,
   };
 };
 
@@ -86,27 +89,5 @@ export default <LabNode>{
   description: "将输入的文字以操作形式发送出去",
   vendor: "Evan Xiao",
   category: "文本",
-  inputs: [
-    {
-      name: "text",
-      label: "内容",
-      type: "data",
-      dataType: ["string"],
-    },
-    {
-      name: "send",
-      label: "发送",
-      type: "action",
-      dataType: [],
-    },
-  ],
-  outputs: [
-    {
-      name: "output",
-      label: "数据",
-      type: "action",
-      dataType: "string",
-    },
-  ],
   hooks: (context) => createNodeHooks(context),
 };
