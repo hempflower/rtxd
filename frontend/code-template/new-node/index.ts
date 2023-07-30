@@ -1,28 +1,41 @@
-import { createHooksFromVue, LabNode } from "@/nodes/index";
+import { LabNode } from "@/nodes/index";
+import { getPersistentData } from "@/nodes/utils";
 import type { LabNodeHooks, LabNodeContext } from "@/nodes";
 import LadNodeView from "./node-view.vue";
+import { App, createApp } from "vue";
+import ElementPlus from "element-plus";
 
 export const createNodeHooks = (context: LabNodeContext): LabNodeHooks => {
-  const { onMount, onUnmount, getApp, getPersistentData } =
-    createHooksFromVue(LadNodeView);
   // Vue app instance
-  const app = getApp();
+  let app: App<Element>;
   // Persistent example
-    // If node being saved, foo.value will be saved to node data
+  // If node being saved, foo.value will be saved to node data
   const { foo } = getPersistentData({
     foo: 1,
   });
   console.log(foo.value);
   foo.value++;
-  return {
-    onCreate: () => {
-      app.provide("readInput", (name: string) => {
-        return context.readInput(name);
-      });
 
-      app.provide("invokeAction", (name: string) => {
-        context.invokeAction(name);
-      });
+  // Add input and output
+  context.addActionInput("action", "输入", ["string"]);
+  context.addActionOutput("action", "输出", "bytes");
+  context.addDataInput("input", "输入", ["string"]);
+  context.addDataOutput("output", "输出", "bytes");
+
+  return {
+    onMount: (el: HTMLElement) => {
+      // vue instance must be created in onMount
+      app = createApp(LadNodeView);
+      app.use(ElementPlus);
+
+      // pass data to vue instance
+      app.provide("foo", foo);
+
+      app.mount(el)
+      
+    },
+    onUnmount: () => {
+      app.unmount();
     },
     onStart: () => {
       //
@@ -30,8 +43,6 @@ export const createNodeHooks = (context: LabNodeContext): LabNodeHooks => {
     onStop: () => {
       //
     },
-    onMount,
-    onUnmount,
   };
 };
 
@@ -40,32 +51,5 @@ export default <LabNode>{
   label: "__label__(noCase)",
   description: "__description__(noCase)",
   vendor: "__vendor__(noCase)",
-  inputs: [
-    {
-      name: "input1",
-      label: "输入1",
-      type: "data",
-      dataType: ["number"],
-    },
-    {
-      name: "input2",
-      label: "触发输入",
-      type: "action",
-      dataType: ["number"],
-    },
-  ],
-  outputs: [
-    {
-      name: "output1",
-      label: "输出1",
-      type: "data",
-      dataType: "number",
-    },
-    {
-      name: "output2",
-      label: "触发",
-      type: "action",
-    },
-  ],
   hooks: (context) => createNodeHooks(context),
 };
