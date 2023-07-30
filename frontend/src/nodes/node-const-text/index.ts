@@ -15,7 +15,10 @@ export const createNodeHooks = (context: LabNodeContext): LabNodeHooks => {
   const dataOutput = context.addDataOutput("output", "输出", "string");
 
   dataOutput.onOutputData(() => {
-    return value.value
+    return {
+      data: value,
+      type: "string",
+    }
   })
 
   return {
