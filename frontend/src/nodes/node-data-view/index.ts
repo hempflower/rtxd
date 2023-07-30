@@ -99,5 +99,6 @@ export default <LabNode>{
   label: "数据显示",
   description: "显示输出的数据",
   vendor: "Evan Xiao",
+  category: "数据",
   hooks: (context) => createNodeDataViewHooks(context),
 };

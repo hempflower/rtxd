@@ -7,6 +7,8 @@ import LabNodeSerialControl from "./node-serial-control";
 import LabNodeTextBuffer from "./node-text-buffer";
 import LabNodeTextSender from "./node-text-sender";
 import LabNodeStringToBytes from "./node-string-to-bytes";
+import LabNodeDataReader from "./node-data-reader"
+import LabNodeConstText from "./node-const-text"
 
 export type LabNodeHooks = {
   onMount: (element: HTMLElement) => void;
@@ -120,6 +122,8 @@ const nodes: LabNode[] = [
   LabNodeTextBuffer,
   LabNodeTextSender,
   LabNodeStringToBytes,
+  LabNodeDataReader,
+  LabNodeConstText,
 ];
 
 export const getRegisteredNodes = (): LabNode[] => {

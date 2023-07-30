@@ -65,5 +65,6 @@ export default <LabNode>{
   label: "定时器",
   description: "定时器节点,每隔一段时间触发一次",
   vendor: "Evan Xiao",
+  category: "定时/调度",
   hooks: (context) => createNodeTimerHooks(context),
 };

@@ -54,5 +54,6 @@ export default <LabNode>{
   label: "数值常量",
   description: "提供一个数值常量",
   vendor: "Evan Xiao",
+  category: "数值",
   hooks: (context) => createNodeConstNumberHooks(context),
 };
