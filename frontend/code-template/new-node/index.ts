@@ -10,7 +10,7 @@ export const createNodeHooks = (context: LabNodeContext): LabNodeHooks => {
   let app: App<Element>;
   // Persistent example
   // If node being saved, foo.value will be saved to node data
-  const { foo } = getPersistentData({
+  const { foo } = getPersistentData(context, {
     foo: 1,
   });
   console.log(foo.value);
@@ -31,8 +31,7 @@ export const createNodeHooks = (context: LabNodeContext): LabNodeHooks => {
       // pass data to vue instance
       app.provide("foo", foo);
 
-      app.mount(el)
-      
+      app.mount(el);
     },
     onUnmount: () => {
       app.unmount();
