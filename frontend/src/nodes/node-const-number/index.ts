@@ -14,15 +14,17 @@ export const createNodeConstNumberHooks = (
   context: LabNodeContext
 ): LabNodeHooks => {
   let app: App<Element>;
-  const value = ref(0);
-  const outputHandle =  context.addDataOutput("output", "输出", "number")
+  const { value } = getPersistentData(context, {
+    value: 0,
+  });
+  const outputHandle = context.addDataOutput("output", "输出", "number");
 
   outputHandle.onOutputData(() => {
     return {
       data: value.value,
       type: "number",
     };
-  })
+  });
 
   return {
     onMount: (el: HTMLElement) => {

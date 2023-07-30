@@ -52,14 +52,6 @@ export const createNodeHooks = (context: LabNodeContext): LabNodeHooks => {
     onMount: (el: HTMLElement) => {
       app = createApp(LadNodeView);
       app.use(ElementPlus);
-      app.provide("readInput", (name: string) => {
-        return context.readInput(name);
-      });
-
-      app.provide("invokeAction", (name: string) => {
-        context.invokeAction(name);
-      });
-
       app.mount(el);
     },
     onUnmount: () => {
