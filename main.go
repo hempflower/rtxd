@@ -7,8 +7,6 @@ import (
 	"github.com/wailsapp/wails/v2"
 	"github.com/wailsapp/wails/v2/pkg/options"
 	"github.com/wailsapp/wails/v2/pkg/options/assetserver"
-	"github.com/wailsapp/wails/v2/pkg/options/linux"
-	"github.com/wailsapp/wails/v2/pkg/options/windows"
 )
 
 //go:embed all:frontend/dist
@@ -23,7 +21,7 @@ func main() {
 
 	// Create application with options
 	err := wails.Run(&options.App{
-		Title:     "Param Lab",
+		Title:     "ParamLab",
 		Width:     1024,
 		Height:    768,
 		MinWidth:  300,
@@ -44,13 +42,6 @@ func main() {
 		},
 		Debug: options.Debug{
 			OpenInspectorOnStartup: true,
-		},
-		// Disable GPU acceleration
-		Windows: &windows.Options{
-			WebviewGpuIsDisabled: true,
-		},
-		Linux: &linux.Options{
-			WebviewGpuPolicy: linux.WebviewGpuPolicyNever,
 		},
 	})
 
