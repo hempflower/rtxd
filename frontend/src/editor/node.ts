@@ -330,7 +330,7 @@ export class EditorNode extends ClassicPreset.Node {
     const input = targetNode.actionInputInterfaces.get(inputInterface);
     const output = this.actionOutputInterfaces.get(outputInterface);
     if (input && output) {
-      output.addActionFn(`${targetNode.id}@${outputInterface}`,(data) => input.actionFn(data));
+      output.addActionFn(`${targetNode.id}@${inputInterface}`,(data) => input.actionFn(data));
       input.isConnected = true;
       output.isConnected = true;
       input.onConnectedFn();
@@ -346,7 +346,7 @@ export class EditorNode extends ClassicPreset.Node {
     const input = targetNode.actionInputInterfaces.get(inputInterface);
     const output = this.actionOutputInterfaces.get(outputInterface);
     if (input && output) {
-      output.removeActionFn(`${targetNode.id}@${outputInterface}`);
+      output.removeActionFn(`${targetNode.id}@${inputInterface}`);
       input.isConnected = false;
       output.isConnected = false;
       input.onDisconnectedFn();
