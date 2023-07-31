@@ -24,6 +24,7 @@ jobs:
           ref: ${{ github.sha }}
           fetch-depth: 0
       - name: Bump version and push tag
+        id: bump
         uses: anothrNick/github-tag-action@1.67.0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -32,6 +33,8 @@ jobs:
           PRERELEASE: ${{ github.base_ref == 'beta' }}
           RELEASE_BRANCHES: master,beta
           DEFAULT_BUMP: patch
+    outputs:
+      new_tag: ${{ steps.bump.outputs.new_tag }}
   release:
     runs-on: windows-latest
     needs: bump
@@ -59,12 +62,12 @@ jobs:
           key: ${{ runner.os }}-node_modules-${{ hashFiles('**/package-lock.json') }}
       - name: Build Windows Release
         run: wails build -platform windows/amd64 -nsis
-      - name: Release Windows
-        uses: "marvinpinto/action-automatic-releases@latest"
+      - name: Release
+        uses: softprops/action-gh-release@v1
         with:
-          repo_token: "${{ secrets.GITHUB_TOKEN }}"
-          prerelease: ${{ github.base_ref == 'beta' }}
+          files: ./build/bin/*.exe
+          tag_name: ${{ needs.bump.outputs.new_tag }}
           draft: true
-          files: |
-            ./build/bin/*.exe
+          generate_release_notes: true
+          prerelease: ${{ github.base_ref == 'beta' }}
  
