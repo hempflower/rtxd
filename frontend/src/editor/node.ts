@@ -115,8 +115,7 @@ class NodeContextImpl implements LabNodeContext {
   ): LabNodeActionOutputInterface {
     const output = new LabNodeActionOutputInterfaceImpl(
       name,
-      dataType,
-      () => null
+      dataType
     );
     this.node.actionOutputInterfaces.set(name, output);
     this.node.addOutput(
@@ -177,15 +176,25 @@ class LabNodeActionOutputInterfaceImpl
   implements LabNodeActionOutputInterface
 {
   dataType: string;
-  invokeAction: ActionFn;
+  private actionsMaps: Map<string, ActionFn> = new Map();
 
-  constructor(name: string, dataType: string, invokeAction: ActionFn) {
+  constructor(name: string, dataType: string) {
     super(name);
     this.dataType = dataType;
-    this.invokeAction = invokeAction;
+  }
+
+  public invokeAction(data?: ActionPayload) {
+    this.actionsMaps.forEach((fn) => fn(data));
+  }
+
+  public addActionFn(name: string, fn: ActionFn) {
+    this.actionsMaps.set(name, fn);
+  }
+
+  public removeActionFn(name: string) {
+    this.actionsMaps.delete(name);
   }
 }
-
 class LabNodeDataInputInterfaceImpl
   extends LabNodeInterfaceImpl
   implements LabNodeDataInputInterface
@@ -321,7 +330,7 @@ export class EditorNode extends ClassicPreset.Node {
     const input = targetNode.actionInputInterfaces.get(inputInterface);
     const output = this.actionOutputInterfaces.get(outputInterface);
     if (input && output) {
-      output.invokeAction = (data) => input.actionFn(data);
+      output.addActionFn(`${targetNode.id}@${outputInterface}`,(data) => input.actionFn(data));
       input.isConnected = true;
       output.isConnected = true;
       input.onConnectedFn();
@@ -337,7 +346,7 @@ export class EditorNode extends ClassicPreset.Node {
     const input = targetNode.actionInputInterfaces.get(inputInterface);
     const output = this.actionOutputInterfaces.get(outputInterface);
     if (input && output) {
-      output.invokeAction = () => null;
+      output.removeActionFn(`${targetNode.id}@${outputInterface}`);
       input.isConnected = false;
       output.isConnected = false;
       input.onDisconnectedFn();

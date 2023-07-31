@@ -9,7 +9,7 @@ export const createNodeHooks = (context: LabNodeContext): LabNodeHooks => {
   let app: App<Element>;
   const { inputText, appendLine, enterSend } = getPersistentData(context, {
     inputText: "",
-    appendLine: "",
+    appendLine: true,
     enterSend: true,
   });
 
