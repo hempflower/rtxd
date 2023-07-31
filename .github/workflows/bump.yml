@@ -29,6 +29,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           WITH_V: true
           DEFAULT_BRANCH: develop
+          VERBOSE: true
           PRERELEASE: ${{ github.base_ref == 'beta' }}
           RELEASE_BRANCHES: "master,beta"
           DEFAULT_BUMP: patch

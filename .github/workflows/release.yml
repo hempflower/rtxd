@@ -23,8 +23,8 @@ jobs:
           prefix: 'v'
       - name: Check version is valid
         run: |
-          - echo "This is a valid version"
-          - exit 1
+          echo "This is a valid version"
+          exit 1
         if: steps.version.outputs.is_valid == 'false'
       - name: Set up Go
         uses: actions/setup-go@v4
