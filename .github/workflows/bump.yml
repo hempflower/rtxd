@@ -22,7 +22,7 @@ jobs:
       - uses: actions/checkout@v3
         with:
           fetch-depth: "0"
-          ref: ${{ github.sha }}
+          ref: ${{ github.event.pull_request.head.sha }}
       - name: Bump version and push tag
         uses: anothrNick/github-tag-action@1.64.0
         env:
@@ -30,5 +30,6 @@ jobs:
           WITH_V: true
           DEFAULT_BRANCH: develop
           PRERELEASE: ${{ github.base_ref == 'beta' }}
+          RELEASE_BRANCHES: "master,beta"
           DEFAULT_BUMP: patch
       
