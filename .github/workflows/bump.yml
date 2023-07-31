@@ -21,16 +21,15 @@ jobs:
     steps:
       - uses: actions/checkout@v3
         with:
-          fetch-depth: "0"
-          ref: ${{ github.event.pull_request.merge_commit_sha }}
+          ref: ${{ github.sha }}
+          fetch-depth: 0
       - name: Bump version and push tag
         uses: anothrNick/github-tag-action@1.64.0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           WITH_V: true
-          DEFAULT_BRANCH: develop
           VERBOSE: true
           PRERELEASE: ${{ github.base_ref == 'beta' }}
-          RELEASE_BRANCHES: "master,beta"
+          RELEASE_BRANCHES: master,beta
           DEFAULT_BUMP: patch
       
