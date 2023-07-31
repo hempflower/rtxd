@@ -59,7 +59,7 @@ jobs:
             "./frontend/node_modules"
           key: ${{ runner.os }}-node_modules-${{ hashFiles('**/package-lock.json') }}
       - name: Build Windows Release
-        run: wails build -platform windows/amd64 -nsis
+        run: wails build -platform windows/amd64 -debug -o ParamLab-{{ needs.bump.outputs.new_tag }}.exe
       - name: Release
         uses: softprops/action-gh-release@v1
         with:
