@@ -258,6 +258,7 @@ export class LabEditor {
     this.history.addPreset(HistoryPresets.classic.setup());
     HistoryExtensions.keyboard(this.history);
     AreaExtensions.zoomAt(this.area, this.editor.getNodes());
+    AreaExtensions.simpleNodesOrder(this.area);
     const selector = AreaExtensions.selector();
     const accumulating = AreaExtensions.accumulateOnCtrl();
     AreaExtensions.selectableNodes(this.area, selector, {
