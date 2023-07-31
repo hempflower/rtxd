@@ -11,7 +11,8 @@
     "isolatedModules": true,
     "esModuleInterop": true,
     "types": [
-      "element-plus/global"
+      "element-plus/global",
+      "@types/wicg-file-system-access"
     ],
     "lib": [
       "ESNext",

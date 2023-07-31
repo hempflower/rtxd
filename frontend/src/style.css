@@ -1,3 +1,7 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 html {
     background-color: #1F1F1F;
     margin: 0;
@@ -23,4 +27,9 @@ body {
 
 .full-height {
     height: 100%;
+}
+
+@font-face {
+    font-family: 'CascadiaMono';
+    src: url('@/assets/fonts/CascadiaMono-SemiLight.woff2') format('woff2');
 }

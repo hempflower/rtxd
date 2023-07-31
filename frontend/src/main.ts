@@ -17,15 +17,23 @@ import zhCn from "element-plus/dist/locale/zh-cn.mjs";
 // @ts-ignore
 import VueClipboard from 'vue3-clipboard'
 
+import '@imengyu/vue3-context-menu/lib/vue3-context-menu.css'
+import ContextMenu from '@imengyu/vue3-context-menu'
+
+// KeyMap
+import { registerKeyMaps } from "@/key-map";
+
 const app = createApp(App);
 app.use(route);
 app.use(ElementPlus, { locale: zhCn });
 app.use(VueClipboard,{})
+app.use(ContextMenu)
+
 for (const [key, component] of Object.entries(ElementPlusIconsVue)) {
   app.component(key, component);
 }
 
-app.config.errorHandler = (err, vm, info) => {
+app.config.errorHandler = (err) => {
   // Show error in console
   console.error(err);
   // Show error by notification
@@ -38,4 +46,5 @@ app.config.errorHandler = (err, vm, info) => {
   });
 };
 
+registerKeyMaps();
 app.mount("#app");

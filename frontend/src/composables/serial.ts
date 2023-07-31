@@ -38,9 +38,5 @@ export const useSerialOptionsModel = () => {
         parity: "none",
     });
 
-    const setSerialOptions = (options: SerialOptions) => {
-        serialOptions.value = options;
-    }
-
-    return { serialOptions, setSerialOptions };
+    return { serialOptions };
 }

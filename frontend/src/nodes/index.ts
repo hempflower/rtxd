@@ -1,45 +1,52 @@
-import { Component, createApp } from "vue";
-
 // Nodes
-import LabNodeDebug from "./lab-nodes/node-test";
-import LabNodeCounter from "./lab-nodes/node-counter";
-import LabNodeTimer from "./lab-nodes/node-timer";
-import LabNodeDataView from "./lab-nodes/node-data-view";
-import LabNodeConstNumber from "./lab-nodes/node-const-number"
+import LabNodeCounter from "./node-counter";
+import LabNodeTimer from "./node-timer";
+import LabNodeDataView from "./node-data-view";
+import LabNodeConstNumber from "./node-const-number";
+import LabNodeSerialControl from "./node-serial-control";
+import LabNodeTextBuffer from "./node-text-buffer";
+import LabNodeTextSender from "./node-text-sender";
+import LabNodeStringToBytes from "./node-string-to-bytes";
+import LabNodeDataReader from "./node-data-reader"
+import LabNodeConstText from "./node-const-text"
+import LabNodeWebview from "./node-webview"
 
 export type LabNodeHooks = {
-  onCreate?: () => void;
-  onDestrory?: () => void;
   onMount: (element: HTMLElement) => void;
   onUnmount: () => void;
   onStart?: () => void;
   onStop?: () => void;
-  onAction?: (name: string) => void;
-  onDataOutput?: (name: string) => unknown;
+  onAction?: (name: string, data?: ActionPayload) => void;
+  onDataOutput?: (name: string) => {
+    data: unknown;
+    type: string;
+  } | null;
 };
 
-export type LabNodeInput =
-  | {
-      name: string;
-      label: string;
-      type: string[];
-    }
-  | {
-      name: string;
-      label: string;
-      type: "action";
-    };
+export type ActionPayload = {
+  data: unknown;
+  type: string;
+};
 
-export type LabNodeOuput =
+export type LabNodeInput = {
+  name: string;
+  label: string;
+  type: "data" | "action";
+  dataType: string[];
+};
+
+export type LabNodeOutput =
   | {
       name: string;
       label: string;
-      type: string;
+      type: "data";
+      dataType: string;
     }
   | {
       name: string;
       label: string;
       type: "action";
+      dataType?: string;
     };
 
 export type LabNode = {
@@ -47,44 +54,80 @@ export type LabNode = {
   label: string;
   description?: string;
   vendor?: string;
+  category?: string;
   hooks: (context: LabNodeContext) => LabNodeHooks;
-  inputs: LabNodeInput[];
-  outputs: LabNodeOuput[];
 };
 
-export interface LabNodeContext {
-  readInput(
-    name: string
-  ): { data: unknown; type: string } | { data: null; type: null };
-  invokeAction(name: string): void;
+export interface LabNodeInterface {
+  name: string;
+  isConnected: boolean;
+  onConnected: (fn: () => void) => void;
+  onDisconnected: (fn: () => void) => void;
+}
+export interface LabNodeDataInputInterface extends LabNodeInterface {
+  acceptTypes: string[];
+  readData(): { data: unknown; type: string } | null;
 }
 
-export const createHooksFromVue = (
-  component: Component,
-  props?: Record<string, unknown>
-) => {
-  const app = createApp(component, props);
-  const mount = (element: HTMLElement) => {
-    app.mount(element);
-  };
-  const unmount = () => {
-    app.unmount();
-  };
-  return {
-    onMount: mount,
-    onUnmount: unmount,
-    app,
-  };
-};
+export interface LabNodeActionInputInterface extends LabNodeInterface {
+  acceptTypes: string[];
+  onAction(fn:(data?: ActionPayload)=>void): void;
+}
+
+export interface LabNodeDataOutputInterface extends LabNodeInterface {
+  dataType: string;
+  onOutputData: (fn:() => { data: unknown; type: string } | null) => void;
+}
+
+export interface LabNodeActionOutputInterface extends LabNodeInterface {
+  dataType: string;
+  invokeAction(data?: ActionPayload): void;
+}
+
+export interface LabNodeContext {
+  readInput(name: string): { data: unknown; type: string } | null;
+  invokeAction(name: string, data?: ActionPayload): void;
+  updateNode(): void;
+  loadData(): string;
+  saveData(data: string): void;
+  addDataInput(
+    name: string,
+    label: string,
+    acceptTypes: string[]
+  ): LabNodeDataInputInterface;
+  addActionInput(
+    name: string,
+    label: string,
+    acceptTypes: string[]
+  ): LabNodeActionInputInterface;
+  addDataOutput(
+    name: string,
+    label: string,
+    dataType: string
+  ): LabNodeDataOutputInterface;
+  addActionOutput(
+    name: string,
+    label: string,
+    dataType: string
+  ): LabNodeActionOutputInterface;
+  removeInput(name: string): void;
+  removeOutput(name: string): void;
+}
 
 const nodes: LabNode[] = [
-  LabNodeDebug,
   LabNodeCounter,
   LabNodeTimer,
   LabNodeDataView,
   LabNodeConstNumber,
+  LabNodeSerialControl,
+  LabNodeTextBuffer,
+  LabNodeTextSender,
+  LabNodeStringToBytes,
+  LabNodeDataReader,
+  LabNodeConstText,
+  LabNodeWebview,
 ];
 
-export const getNodes = (): LabNode[] => {
+export const getRegisteredNodes = (): LabNode[] => {
   return nodes;
 };
