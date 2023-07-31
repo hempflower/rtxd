@@ -1,31 +1,42 @@
 # This workflow will build a golang project
 # For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-go
 
-name: Tagged Release
+name: Auto Bump version
 
 on:
-  workflow_run:
-    workflows: ["Auto Bump version"]
+  pull_request:
     types:
-      - completed
+      - closed
+    branches:
+      - master
+      - beta
   workflow_dispatch:
 
 jobs:
-  release:
-    runs-on: windows-latest
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+  bump:
+    runs-on: ubuntu-latest
+    if: github.event.pull_request.merged == true
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v3
-      - name: Check version format
-        uses: nowsprinting/check-version-format-action@v3
-        id: version
         with:
-          prefix: 'v'
-      - name: Check version is valid
-        run: |
-          echo "This is a invalid version"
-          exit 1
-        if: steps.version.outputs.is_valid == 'false'
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+      - name: Bump version and push tag
+        uses: anothrNick/github-tag-action@1.64.0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          WITH_V: true
+          VERBOSE: true
+          PRERELEASE: ${{ github.base_ref == 'beta' }}
+          RELEASE_BRANCHES: master,beta
+          DEFAULT_BUMP: patch
+  release:
+    runs-on: windows-latest
+    needs: bump
+    steps:
+      - uses: actions/checkout@v3
       - name: Set up Go
         uses: actions/setup-go@v4
         with:
@@ -52,8 +63,8 @@ jobs:
         uses: "marvinpinto/action-automatic-releases@latest"
         with:
           repo_token: "${{ secrets.GITHUB_TOKEN }}"
-          prerelease: steps.version.outputs.is_stable == 'false'
+          prerelease: ${{ github.base_ref == 'beta' }}
           draft: true
           files: |
             ./build/bin/*.exe
-      
+ 
