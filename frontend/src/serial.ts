@@ -13,7 +13,10 @@ import { Base64 } from "js-base64";
 export interface SerialOptions {
   baudRate: number;
   dataBits: 5 | 6 | 7 | 8;
-  stopBits: 1 | 1.5 | 2;
+  // 0: 1 stop bit
+  // 1: 1.5 stop bits
+  // 2: 2 stop bits
+  stopBits: 0 | 1 | 2;
   parity: "none" | "even" | "mark" | "odd" | "space";
 }
 

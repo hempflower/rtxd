@@ -1,12 +1,9 @@
 import { ref,onMounted,onBeforeUnmount } from 'vue';
 import { getSerialPorts } from "@/serial";
+import type { SerialOptions } from "@/serial";
 
-export type SerialOptions = {
+export interface SerialOptionsWithPath extends SerialOptions {
     path: string;
-    baudRate: number;
-    dataBits: 5 | 6 | 7 | 8;
-    stopBits: 1 | 1.5 | 2;
-    parity: "none" | "even" | "mark" | "odd" | "space";
 }
 
 export const useSerialList = () => {
@@ -30,7 +27,7 @@ export const useSerialList = () => {
 
 
 export const useSerialOptionsModel = () => {
-    const serialOptions = ref<SerialOptions>({
+    const serialOptions = ref<SerialOptionsWithPath>({
         path: "",
         baudRate: 115200,
         dataBits: 8,
