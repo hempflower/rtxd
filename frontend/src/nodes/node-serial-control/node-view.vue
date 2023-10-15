@@ -33,7 +33,6 @@
       <div class="input-label">停止位</div>
       <el-select
         :teleported="false"
-        :persistent="false"
         class="input-width"
         v-model="serialOptions.stopBits"
         :disabled="isConnect"
@@ -48,7 +47,6 @@
       <div class="input-label">数据位</div>
       <el-select
         :teleported="false"
-        :persistent="false"
         class="input-width"
         v-model="serialOptions.dataBits"
         :disabled="isConnect"
@@ -64,7 +62,6 @@
       <div class="input-label">检验位</div>
       <el-select
         :teleported="false"
-        :persistent="false"
         class="input-width"
         v-model="serialOptions.parity"
         :disabled="isConnect"

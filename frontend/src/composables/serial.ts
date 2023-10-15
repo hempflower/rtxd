@@ -31,7 +31,7 @@ export const useSerialOptionsModel = () => {
         path: "",
         baudRate: 115200,
         dataBits: 8,
-        stopBits: 1,
+        stopBits: 0,
         parity: "none",
     });
 
