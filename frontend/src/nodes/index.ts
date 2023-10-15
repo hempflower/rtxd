@@ -6,10 +6,12 @@ import LabNodeConstNumber from "./node-const-number";
 import LabNodeSerialControl from "./node-serial-control";
 import LabNodeTextBuffer from "./node-text-buffer";
 import LabNodeTextSender from "./node-text-sender";
+import LabNodeTextSplitter from "./node-text-splitter"
 import LabNodeStringToBytes from "./node-string-to-bytes";
 import LabNodeDataReader from "./node-data-reader"
 import LabNodeConstText from "./node-const-text"
 import LabNodeWebview from "./node-webview"
+
 
 export type LabNodeHooks = {
   onMount: (element: HTMLElement) => void;
@@ -122,6 +124,7 @@ const nodes: LabNode[] = [
   LabNodeSerialControl,
   LabNodeTextBuffer,
   LabNodeTextSender,
+  LabNodeTextSplitter,
   LabNodeStringToBytes,
   LabNodeDataReader,
   LabNodeConstText,
