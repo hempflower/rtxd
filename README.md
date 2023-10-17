@@ -1,73 +1,74 @@
-# ParamLab - DIY 属于自己的上位机
+# ParamLab - DIY Your Own HMI
 
-## 介绍
+## Introduction
 
-ParamLab 提供了一个全新的上位机模式，不同于传统上位机，ParamLab 采用了一种类似于 UE4 蓝图的可视化编程模式。
-这一模式可以将编程与数据展示无缝结合，即使你没有什么编程经验，也可以通过鼠标连接节点的方式快速组合出一个满足自定义需求的上位机。
+`ParamLab` offers a new HMI (Human-Machine Interface) mode, unlike traditional HMIs. `ParamLab` utilizes a visual programming model similar to UE4 Blueprints. This mode seamlessly combines programming with data display. Even without programming experience, you can quickly assemble an HMI that meets custom requirements by connecting nodes with a mouse.
 
-## 开发
+## Development
 
-### 环境
+### Environment
 
-本项目基于 wails 框架，请参考[wails文档](https://wails.io/zh-Hans/docs/gettingstarted/installation)安装 wails 环境。
+This project is based on the `Wails` framework. Please refer to the [Wails documentation](https://wails.io/zh-Hans/docs/gettingstarted/installation) for `Wails` environment installation.
 
-### 开发模式运行
+### Run in Development Mode
 
 ```bash
 wails dev
 ```
 
-### 编译
+### Build
 
 ```bash
 wails build
-# 也可以使用 upx 压缩，体积更小
+# or use upx to compress, smaller size
 wails build -upx
 ```
 
-### 技术栈
+### Technology Stack
 
-- element-plus 提供部分组件
-- retejs 提供可视化编程框架
-- vue3 + typescript + vite 基础框架
-- wails 提供跨平台支持
+- element-plus provides some components
+- retejs provides a visual programming framework
+- vue3 + typescript + vite basic framework
+- wails provides cross-platform support
 
-## 使用
+## Usage
 
-### 下载和安装
+### Download
 
-请前往 [release](https://github.com/hempflower/ParamLab/releases) 页面下载最新版本。
+Please visit the [release](https://github.com/hempflower/ParamLab/releases) page to download the latest version.
 
-在较新版本的 windows 10 或者 windows 11 中，可以直接运行此程序，无需安装任何依赖。   
-在旧版本的 windows 中，需要安装 webview2 运行时，下载地址：[https://developer.microsoft.com/en-us/microsoft-edge/webview2/](https://developer.microsoft.com/en-us/microsoft-edge/webview2/)
+In newer versions of Windows 10 or Windows 11, you can run the program directly without installing any dependencies.
+In older versions of Windows, you need to install the WebView2 runtime. Download link: https://developer.microsoft.com/en-us/microsoft-edge/webview2/
 
-Linux 与 macOS 理论上是支持的，但是未经过测试，欢迎尝试，如有问题请提 issue。
+Linux and macOS theoretically support it, but it's untested. Feel free to try, and if you encounter any issues, please raise an issue.
 
-### 编辑节点
+### Edit Nodes
 
-#### 新建节点
+#### Create Nodes
 
-在编辑器区域鼠标右键，选择需要添加的节点类型。节点将添加到鼠标位置。
+Right-click in the editor area and choose the node type you want to add. The node will be added to the mouse position.
 
-#### 连接节点
+#### Connect Nodes
 
-鼠标左键拖动一个节点的输出端口到另一个节点的输入端口，即可连接两个节点。    
-请注意，节点并非所有的输出端口都可以连接到所有的输入端口，只有类型匹配的端口才可以连接。
+Drag the output port of one node to the input port of another node with the left mouse button to connect the two nodes.
+Note that not all output ports of a node can connect to all input ports. Only ports of matching types can connect.
 
-#### 运行
+#### Run
 
-选择点击编辑器悬浮工具栏的运行按钮，即可运行当前的节点组合。
+Select the run button in the editor's floating toolbar to run the current node combination.
 
-#### 保存
+#### Save and Load
 
-选择 "文件"->"保存" 即可保存当前的节点组合。保存的文件为 json 格式，可以使用文本编辑器打开。
+Choose "File"->"Save" to save the current node combination. The saved file is in JSON format and can be opened with a text editor.
 
-## 截图
+Choose "File"->"Load" to load a saved node combination.
 
-![节点连接](./screenshots/node-connection.png)
+## Screenshots
 
-![串口助手](./screenshots/serial-debug.png)
+![node-connect](./screenshots/node-connection.png)
 
-## 许可证
+![serial-util](./screenshots/serial-debug.png)
 
-本项目使用 GPL v3 许可证，详见 [LICENSE](LICENSE) 文件。
+## License
+
+ParamLab is licensed under the GPL V3 License. See [LICENSE](./LICENSE) for the full license text.
