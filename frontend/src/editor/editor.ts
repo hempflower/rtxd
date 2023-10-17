@@ -18,16 +18,19 @@ import {
   ActionOutputSocket,
 } from "./socket";
 
-import { ref, watch } from "vue";
-import type { Ref } from "vue";
+import { ref } from "vue";
 
-import { getRegisteredNodes, ActionPayload } from "@/nodes";
+import { getRegisteredNodes } from "@/nodes";
 
 import { EditorNode } from "./node";
 import { loadFromJson, saveToJson } from "./loader";
 
 import type { Schemes, AreaExtra } from "./types";
 import { createContextMenuMiddleware } from "./context-menu";
+
+import { useLogger } from "@/composables/logger";
+
+const { info } = useLogger("editor");
 
 const createLabRenderPreset = () => {
   return Presets.classic.setup({
@@ -63,13 +66,11 @@ const createLabConnectionPreset = (editor: NodeEditor<Schemes>) => {
       canMakeConnection: (from, to) => {
         // Same side are not allowed
         if (from.side === to.side) {
-          console.log("Same side connection");
           return false;
         }
 
         // Same node are not allowed
         if (from.nodeId === to.nodeId) {
-          console.log("Same node connection");
           return false;
         }
 
@@ -285,9 +286,10 @@ export class LabEditor {
     this.content = newContent;
     // Stop editor
     this.stop();
-
+    info("Loading document json");
     const data = loadFromJson(this.content);
 
+    info("Loading nodes to editor...");
     // load nodes
     for (const node of data.nodes) {
       const config = this.nodes.find((n) => n.name === node.name);
@@ -304,6 +306,7 @@ export class LabEditor {
       });
     }
 
+    info("ReBuilding connections...");
     // load connections
     for (const connection of data.connections) {
       const sourceNode = this.editor.getNode(connection.source.nodeId);
@@ -318,7 +321,7 @@ export class LabEditor {
         )
       );
     }
-
+    info("Done");
     AreaExtensions.zoomAt(this.area, this.editor.getNodes());
     this.lockContent = false;
   }
@@ -344,6 +347,7 @@ export class LabEditor {
         },
       })),
     });
+    info("Document json serialized");
     this.onContentChangeFn(this.content);
   }
 
