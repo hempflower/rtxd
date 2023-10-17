@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"encoding/base64"
-	"fmt"
 	"time"
 
 	"github.com/wailsapp/wails/v2/pkg/runtime"
@@ -39,7 +38,8 @@ func (l *LabSerial) serialReader(connectionId int32) {
 				"connectionId": connectionId,
 			}
 			runtime.EventsEmit(l.context, "serial-disconnected", payload)
-			fmt.Println("Error:", err.Error())
+
+			runtime.LogErrorf(l.context, "Error reading from serial port. reason: %s", err.Error())
 
 			return
 		}
@@ -65,6 +65,7 @@ func (l *LabSerial) serialWriter(connectionId int32, writeCh chan []byte) {
 		_, err := port.Write(buffer)
 		if err != nil {
 			println("Error:", err.Error())
+			runtime.LogErrorf(l.context, "Error writing to serial port. reason: %s", err.Error())
 		}
 	}
 }
@@ -83,7 +84,7 @@ func (l *LabSerial) SetContext(context context.Context) {
 }
 
 func (l *LabSerial) OpenSerialPort(portName string, baudRate int, databits int, parity int, stopbits int) int32 {
-
+	runtime.LogInfo(l.context, "Opening serial port "+portName)
 	mode := &serial.Mode{
 		BaudRate: baudRate,
 		DataBits: databits,
@@ -105,6 +106,8 @@ func (l *LabSerial) OpenSerialPort(portName string, baudRate int, databits int, 
 	}
 	runtime.EventsEmit(l.context, "serial-connected", payload)
 
+	runtime.LogInfo(l.context, "Serial port opened")
+
 	// Run go routine to read from serial port
 	go l.serialReader(connectionId)
 	go l.serialWriter(connectionId, l.serialMap[connectionId].writeChannel)
@@ -122,7 +125,7 @@ func (l *LabSerial) CloseSerialPort(connectionId int32) {
 		println("Error:", err.Error())
 	}
 
-	println("Serial port closed")
+	runtime.LogInfo(l.context, "Serial port closed")
 
 	// emit event to frontend
 	payload := map[string]int32{

@@ -54,6 +54,7 @@ import { useDocument } from "@/composables/doc";
 import { useEditAction } from "@/composables/edit-action";
 import EditorBackground from "@/components/editor-background.vue";
 import { FullScreen, VideoPause, VideoPlay } from "@element-plus/icons-vue";
+import { useLogger } from "@/composables/logger";
 
 const editorContainer = ref<HTMLElement | null>(null);
 let editorInstance: LabEditor | null = null;
@@ -62,10 +63,12 @@ const zooming = ref(false);
 
 const running = ref(false);
 
-const { content,onLoadContent } = useDocument();
+const { content, onLoadContent } = useDocument();
 const { undoFn, redoFn, deleteFn, cloneFn } = useEditAction();
+const { info } = useLogger("node-editor");
 
 const createEditorInstance = async () => {
+  info("create editor instance");
   const container = editorContainer.value as HTMLElement;
   editorInstance = new LabEditor(container);
 
@@ -75,23 +78,27 @@ const createEditorInstance = async () => {
   cloneFn.value = () => editorInstance?.cloneSelectedNodes();
 
   onLoadContent(() => {
+    info("load project json");
     editorInstance?.loadJson(content.value);
   });
 
   editorInstance.onContentChange((json) => {
+    info("editor content change. Sync to document");
     content.value = json;
   });
 
   watch(editorInstance.isRunning, (val) => {
+    info("editor running state change:" + val);
     running.value = val;
   });
 };
 
 onMounted(async () => {
-  createEditorInstance();
+  await createEditorInstance();
 });
 
 onBeforeUnmount(() => {
+  info("destroy editor instance");
   editorInstance?.destroy();
 
   editorInstance = null;

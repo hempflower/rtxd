@@ -4,7 +4,7 @@
             开发版本
         </div>
         <div class="dev-decsription">
-            开发中的内容，可能随着开发进度而变化
+            开发中的内容，可能随着开发的推进而发生变化。
         </div>
     </div>
 </template>

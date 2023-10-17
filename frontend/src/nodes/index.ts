@@ -131,6 +131,15 @@ const nodes: LabNode[] = [
   LabNodeWebview,
 ];
 
+export const getNodeByName = (name: string): LabNode | null => {
+  for (const node of nodes) {
+    if (node.name === name) {
+      return node;
+    }
+  }
+  return null;
+};
+
 export const getRegisteredNodes = (): LabNode[] => {
   return nodes;
 };
