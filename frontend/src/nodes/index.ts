@@ -11,6 +11,7 @@ import LabNodeStringToBytes from "./node-string-to-bytes";
 import LabNodeDataReader from "./node-data-reader"
 import LabNodeConstText from "./node-const-text"
 import LabNodeWebview from "./node-webview"
+import LabNodeButton from "./node-button"
 
 
 export type LabNodeHooks = {
@@ -129,6 +130,7 @@ const nodes: LabNode[] = [
   LabNodeDataReader,
   LabNodeConstText,
   LabNodeWebview,
+  LabNodeButton,
 ];
 
 export const getNodeByName = (name: string): LabNode | null => {
