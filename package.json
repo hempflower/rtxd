@@ -1,16 +1,51 @@
 {
-  "name": "paramlab-project",
+  "name": "rtxd",
+  "version": "0.1.0",
+  "main": "dist-electron/main/index.js",
+  "description": "Next Generation Serial Debug Tools",
+  "author": "Evanxiao <1993996310@qq.com>",
+  "license": "MIT",
   "private": true,
-  "scripts": {
-    "commit": "git-cz",
-    "changelog": "conventional-changelog -p angular -i CHANGELOG.md -s -r 0 && git add CHANGELOG.md"
-  },
-  "devDependencies": {
-    "cz-conventional-changelog": "^3.3.0"
+  "keywords": [
+    "electron",
+    "rollup",
+    "vite",
+    "vue3",
+    "vue"
+  ],
+  "debug": {
+    "env": {
+      "VITE_DEV_SERVER_URL": "http://127.0.0.1:3344/"
+    }
   },
   "config": {
     "commitizen": {
-      "path": "./node_modules/cz-conventional-changelog"
+      "path": "node_modules/cz-git"
     }
+  },
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vue-tsc --noEmit && vite build && electron-builder",
+    "preview": "vite preview"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^5.0.4",
+    "autoprefixer": "^10.4.19",
+    "cz-git": "^1.9.1",
+    "electron": "^29.1.1",
+    "electron-builder": "^24.13.3",
+    "git-cz": "^4.9.0",
+    "postcss": "^8.4.38",
+    "tailwindcss": "^3.4.3",
+    "typescript": "^5.4.2",
+    "vite": "^5.1.5",
+    "vite-plugin-electron": "^0.28.4",
+    "vite-plugin-electron-renderer": "^0.14.5",
+    "vue": "^3.4.21",
+    "vue-tsc": "^2.0.6"
+  },
+  "dependencies": {
+    "element-plus": "^2.7.2"
   }
 }
