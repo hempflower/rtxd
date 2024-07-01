@@ -33,7 +33,7 @@
     "@vitejs/plugin-vue": "^5.0.4",
     "autoprefixer": "^10.4.19",
     "cz-git": "^1.9.1",
-    "electron": "^30.0.2",
+    "electron": "^31.1.0",
     "electron-builder": "^24.13.3",
     "git-cz": "^4.9.0",
     "postcss": "^8.4.38",
